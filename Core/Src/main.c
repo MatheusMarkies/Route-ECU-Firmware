@@ -1357,7 +1357,17 @@ void setup() {
 }
 
 void loop() {
+/*
+ * // Comando for para testar um injetor...
+uint8_t inj_index = 2; // Extraído do comando
+float pw_ms = 5.0;     // Extraído do comando
+Injector_TestPulse(inj_index, pw_ms);
 
+// Comando for para testar a ignição...
+uint8_t ign_index = 0; // Extraído do comando
+float dwell_ms = 3.2;  // Extraído do comando
+Ignition_TestPulse(ign_index, dwell_ms);
+ */
 }
 
 /* USER CODE END 4 */

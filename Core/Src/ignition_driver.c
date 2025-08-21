@@ -60,6 +60,51 @@ void Ignition_ScheduleSpark(uint8_t cylinder_index, float advance_deg, float dwe
     }
 }
 
+/* ... (conteúdo anterior, incluindo a função Ignition_ScheduleSpark) ... */
+
+// --- Implementação da Função de Debug ---
+
+/**
+ * @brief Dispara um único pulso de teste numa bobina de ignição específica.
+ */
+void Ignition_TestPulse(uint8_t cylinder_index, float dwell_ms) {
+    // Validação de segurança básica
+    if (cylinder_index >= 4 || dwell_ms <= 0.0f || dwell_ms > 10.0f) {
+        return; // Parâmetros inválidos
+    }
+
+    // 1. Converte o dwell em milissegundos para ticks do nosso timer (que são microssegundos)
+    // Usamos a constante TIMER_CLOCK_FREQ_HZ definida no cabeçalho.
+    uint32_t pulse_ticks = (uint32_t)(dwell_ms * 1000.0f);
+
+    // 2. Seleciona o canal do timer correto e dispara um único pulso
+    switch (cylinder_index) {
+        case 0:
+            // Configura o Período (ARR) e o Compare (CCR) para gerar um único pulso
+            // com a duração exata do dwell.
+            htim1.Instance->ARR = pulse_ticks + 10; // Período ligeiramente maior para garantir o pulso completo
+            htim1.Instance->CCR1 = pulse_ticks;     // Largura do pulso para o Canal 1
+            // Inicia o timer em modo "One-Pulse". O hardware gera o pulso e para automaticamente.
+            HAL_TIM_OnePulse_Start(&htim1, IGNITION_COIL_1_CHANNEL);
+            break;
+        case 1:
+            htim1.Instance->ARR = pulse_ticks + 10;
+            htim1.Instance->CCR2 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, IGNITION_COIL_2_CHANNEL);
+            break;
+        case 2:
+            htim1.Instance->ARR = pulse_ticks + 10;
+            htim1.Instance->CCR3 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, IGNITION_COIL_3_CHANNEL);
+            break;
+        case 3:
+            htim1.Instance->ARR = pulse_ticks + 10;
+            htim1.Instance->CCR4 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, IGNITION_COIL_4_CHANNEL);
+            break;
+    }
+}
+
 // ============================================================
 // Callbacks de segurança (desliga PWM depois do pulso)
 // ============================================================

@@ -21,6 +21,14 @@ extern TIM_HandleTypeDef htim1;
 #define IGNITION_COIL_3_CHANNEL TIM_CHANNEL_3
 #define IGNITION_COIL_4_CHANNEL TIM_CHANNEL_4
 
+/**
+ * @brief Dispara um único pulso de teste numa bobina de ignição específica.
+ * @note  Esta função é para fins de diagnóstico e ignora a lógica principal do motor.
+ * @param cylinder_index O índice da bobina a testar (0 a 3).
+ * @param dwell_ms O tempo de carga (dwell) desejado para o teste, em milissegundos.
+ */
+void Ignition_TestPulse(uint8_t cylinder_index, float dwell_ms);
+
 void Ignition_Init(void);
 void Ignition_ScheduleSpark(uint8_t, float, float);
 uint32_t DegreesToTimeUs(float);

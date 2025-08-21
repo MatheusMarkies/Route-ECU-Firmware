@@ -62,6 +62,50 @@ void Injector_SchedulePulse(uint8_t cylinder_index, float pulse_width_ms) {
     }
 }
 
+/* ... (conteúdo anterior, incluindo a função Injector_SchedulePulse) ... */
+
+// --- Implementação da Função de Debug ---
+
+/**
+ * @brief Dispara um único pulso de teste num injetor específico.
+ */
+void Injector_TestPulse(uint8_t cylinder_index, float pulse_width_ms) {
+    // Validação de segurança básica
+    if (cylinder_index >= 4 || pulse_width_ms <= 0.0f || pulse_width_ms > 50.0f) {
+        return; // Parâmetros inválidos
+    }
+
+    // 1. Converte a largura de pulso em milissegundos para ticks do timer (microssegundos)
+    uint32_t pulse_ticks = (uint32_t)(pulse_width_ms * 1000.0f);
+
+    // 2. Seleciona o timer/canal correto e dispara o pulso
+    switch (cylinder_index) {
+        case 0: // Injetor 1 (assumindo TIM3, Canal 1)
+            htim3.Instance->ARR = pulse_ticks + 20;
+            htim3.Instance->CCR1 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim3, INJECTOR_1_CHANNEL);
+            break;
+
+        case 1: // Injetor 2 (assumindo TIM4, Canal 2)
+            htim4.Instance->ARR = pulse_ticks + 20;
+            htim4.Instance->CCR2 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim4, INJECTOR_2_CHANNEL);
+            break;
+
+        case 2: // Injetor 3 (assumindo TIM4, Canal 3)
+            htim4.Instance->ARR = pulse_ticks + 20;
+            htim4.Instance->CCR3 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim4, INJECTOR_3_CHANNEL);
+            break;
+
+        case 3: // Injetor 4 (assumindo TIM3, Canal 4)
+            htim3.Instance->ARR = pulse_ticks + 20;
+            htim3.Instance->CCR4 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim3, INJECTOR_4_CHANNEL);
+            break;
+    }
+}
+
 // ============================================================
 // Callback opcional (segurança) -> zera duty após o pulso
 // ============================================================

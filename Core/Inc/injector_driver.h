@@ -26,6 +26,14 @@ extern TIM_HandleTypeDef htim4;
 #define INJECTOR_4_CHANNEL    TIM_CHANNEL_2
 
 /**
+ * @brief Dispara um único pulso de teste num injetor específico.
+ * @note  Esta função é para fins de diagnóstico e ignora a lógica principal do motor.
+ * @param cylinder_index O índice do injetor a testar (0 a 3).
+ * @param pulse_width_ms A largura de pulso desejada para o teste, em milissegundos.
+ */
+void Injector_TestPulse(uint8_t cylinder_index, float pulse_width_ms);
+
+/**
  * @brief Inicializa o módulo de injeção.
  * @note Configura e inicia os timers de hardware para todos os canais de injetor.
  * Deve ser chamado uma vez na função de setup.
