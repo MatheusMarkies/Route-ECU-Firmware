@@ -1,0 +1,4 @@
+../Core/Src/engine_sensors.c:12:6:EngineSensors_Init	1
+../Core/Src/engine_sensors.c:17:6:ProcessSensorData	5
+../Core/Src/engine_sensors.c:65:6:Task_ReadSensors	2
+../Core/Src/engine_sensors.c:80:6:HAL_ADC_ConvCpltCallback	2

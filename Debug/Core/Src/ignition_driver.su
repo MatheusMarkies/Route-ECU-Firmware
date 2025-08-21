@@ -1,0 +1,5 @@
+../Core/Src/ignition_driver.c:16:6:Ignition_Init	8	static
+../Core/Src/ignition_driver.c:31:6:Ignition_ScheduleSpark	48	static
+../Core/Src/ignition_driver.c:66:6:Ignition_TimerCallback	16	static
+../Core/Src/ignition_driver.c:80:10:DegreesToTimeUs	32	static
+../Core/Src/ignition_driver.c:88:10:ApplyDwellCompensation	16	static

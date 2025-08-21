@@ -1,0 +1,2 @@
+../Core/Src/crank_decoder.c:17:6:Crank_Init	8	static
+../Core/Src/crank_decoder.c:22:6:HAL_TIM_IC_CaptureCallback	32	static
