@@ -13,15 +13,15 @@
 // ============================================================
 void Injector_Init(void) {
     // Inicia PWM em todos os canais (com duty = 0)
-    HAL_TIM_PWM_Start(&htim3, INJECTOR_1_CHANNEL);
-    HAL_TIM_PWM_Start(&htim4, INJECTOR_2_CHANNEL);
-    HAL_TIM_PWM_Start(&htim4, INJECTOR_3_CHANNEL);
-    HAL_TIM_PWM_Start(&htim3, INJECTOR_4_CHANNEL);
+    HAL_TIM_PWM_Start(&htim1, INJECTOR_1_CHANNEL);
+    HAL_TIM_PWM_Start(&htim1, INJECTOR_2_CHANNEL);
+    HAL_TIM_PWM_Start(&htim1, INJECTOR_3_CHANNEL);
+    HAL_TIM_PWM_Start(&htim1, INJECTOR_4_CHANNEL);
 
-    __HAL_TIM_SET_COMPARE(&htim3, INJECTOR_1_CHANNEL, 0);
-    __HAL_TIM_SET_COMPARE(&htim4, INJECTOR_2_CHANNEL, 0);
-    __HAL_TIM_SET_COMPARE(&htim4, INJECTOR_3_CHANNEL, 0);
-    __HAL_TIM_SET_COMPARE(&htim3, INJECTOR_4_CHANNEL, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, INJECTOR_1_CHANNEL, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, INJECTOR_2_CHANNEL, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, INJECTOR_3_CHANNEL, 0);
+    __HAL_TIM_SET_COMPARE(&htim1, INJECTOR_4_CHANNEL, 0);
 }
 
 // ============================================================
@@ -37,27 +37,27 @@ void Injector_SchedulePulse(uint8_t cylinder_index, float pulse_width_ms) {
     // 2. Configura timer/canal conforme cilindro
     switch (cylinder_index) {
         case 0: // Injetor 1
-        	htim3.Instance->ARR = pulse_ticks + 20;
-        	htim3.Instance->CCR1 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim3, INJECTOR_1_CHANNEL);
+        	htim1.Instance->ARR = pulse_ticks + 20;
+        	htim1.Instance->CCR1 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, INJECTOR_1_CHANNEL);
             break;
 
         case 1: // Injetor 2
-        	htim4.Instance->ARR = pulse_ticks + 20;
-        	htim4.Instance->CCR2 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim4, INJECTOR_2_CHANNEL);
+        	htim1.Instance->ARR = pulse_ticks + 20;
+        	htim1.Instance->CCR2 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, INJECTOR_2_CHANNEL);
             break;
 
         case 2: // Injetor 3
-        	htim4.Instance->ARR = pulse_ticks + 20;
-        	htim4.Instance->CCR1 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim4, INJECTOR_3_CHANNEL);
+        	htim1.Instance->ARR = pulse_ticks + 20;
+        	htim1.Instance->CCR1 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, INJECTOR_3_CHANNEL);
             break;
 
         case 3: // Injetor 4
-        	htim3.Instance->ARR = pulse_ticks + 20;
-        	htim3.Instance->CCR2 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim3, INJECTOR_4_CHANNEL);
+        	htim1.Instance->ARR = pulse_ticks + 20;
+        	htim1.Instance->CCR2 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, INJECTOR_4_CHANNEL);
             break;
     }
 }
@@ -81,27 +81,27 @@ void Injector_TestPulse(uint8_t cylinder_index, float pulse_width_ms) {
     // 2. Seleciona o timer/canal correto e dispara o pulso
     switch (cylinder_index) {
         case 0: // Injetor 1 (assumindo TIM3, Canal 1)
-            htim3.Instance->ARR = pulse_ticks + 20;
-            htim3.Instance->CCR1 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim3, INJECTOR_1_CHANNEL);
+        	htim1.Instance->ARR = pulse_ticks + 20;
+        	htim1.Instance->CCR1 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, INJECTOR_1_CHANNEL);
             break;
 
         case 1: // Injetor 2 (assumindo TIM4, Canal 2)
-            htim4.Instance->ARR = pulse_ticks + 20;
-            htim4.Instance->CCR2 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim4, INJECTOR_2_CHANNEL);
+        	htim1.Instance->ARR = pulse_ticks + 20;
+            htim1.Instance->CCR2 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, INJECTOR_2_CHANNEL);
             break;
 
         case 2: // Injetor 3 (assumindo TIM4, Canal 3)
-            htim4.Instance->ARR = pulse_ticks + 20;
-            htim4.Instance->CCR3 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim4, INJECTOR_3_CHANNEL);
+        	htim1.Instance->ARR = pulse_ticks + 20;
+        	htim1.Instance->CCR3 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, INJECTOR_3_CHANNEL);
             break;
 
         case 3: // Injetor 4 (assumindo TIM3, Canal 4)
-            htim3.Instance->ARR = pulse_ticks + 20;
-            htim3.Instance->CCR4 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim3, INJECTOR_4_CHANNEL);
+        	htim1.Instance->ARR = pulse_ticks + 20;
+        	htim1.Instance->CCR4 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim1, INJECTOR_4_CHANNEL);
             break;
     }
 }
@@ -110,12 +110,10 @@ void Injector_TestPulse(uint8_t cylinder_index, float pulse_width_ms) {
 // Callback opcional (segurança) -> zera duty após o pulso
 // ============================================================
 void Injector_TimerCallback(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM2) {
-        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
-    }
-    if (htim->Instance == TIM3) {
-        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
-        __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 0);
+    if (htim->Instance == TIM1) {
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+        __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
     }
 }

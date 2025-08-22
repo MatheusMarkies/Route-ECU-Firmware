@@ -16,7 +16,7 @@
 extern const long TIMER_CLOCK_FREQ_HZ;
 
 // --- Variáveis Externas ---
-extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim2;
 
 // --- Definição das Variáveis Globais ---
 extern EcuConfig_t  g_ecuConfig;

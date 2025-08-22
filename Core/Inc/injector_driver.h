@@ -16,14 +16,13 @@
 
 extern const long TIMER_CLOCK_FREQ_HZ;
 
-extern TIM_HandleTypeDef htim3;
-extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim1;
 
 // --- Mapeamento dos Timers/Canais para cada injetor ---
 #define INJECTOR_1_CHANNEL    TIM_CHANNEL_1
 #define INJECTOR_2_CHANNEL    TIM_CHANNEL_2
 #define INJECTOR_3_CHANNEL    TIM_CHANNEL_3
-#define INJECTOR_4_CHANNEL    TIM_CHANNEL_2
+#define INJECTOR_4_CHANNEL    TIM_CHANNEL_4
 
 /**
  * @brief Dispara um único pulso de teste num injetor específico.

@@ -15,12 +15,12 @@
 #include "crank_decoder.h"
 
 void Crank_Init(void) {
-    HAL_TIM_IC_Start_IT(&htim4, TIM_CHANNEL_1);
+    HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 }
 
 // ESTA FUNÇÃO É CHAMADA PELA ISR DO TIMER
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM4) { // Confirma que é o timer correto
+    if (htim->Instance == TIM2) { // Confirma que é o timer correto
         uint32_t current_capture_tick = HAL_TIM_GetCapturedValue(htim, TIM_CHANNEL_1);
 
         if (last_capture_tick != 0) {

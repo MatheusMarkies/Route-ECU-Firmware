@@ -14,15 +14,15 @@ extern EngineData_t g_engineData;
 extern EngineState_t g_engineState;
 
 void Ignition_Init(void) {
-    HAL_TIM_PWM_Start(&htim1, IGNITION_COIL_1_CHANNEL);
-    HAL_TIM_PWM_Start(&htim1, IGNITION_COIL_2_CHANNEL);
-    HAL_TIM_PWM_Start(&htim1, IGNITION_COIL_3_CHANNEL);
-    HAL_TIM_PWM_Start(&htim1, IGNITION_COIL_4_CHANNEL);
+    HAL_TIM_PWM_Start(&htim4, IGNITION_COIL_1_CHANNEL);
+    HAL_TIM_PWM_Start(&htim4, IGNITION_COIL_2_CHANNEL);
+    HAL_TIM_PWM_Start(&htim4, IGNITION_COIL_3_CHANNEL);
+    HAL_TIM_PWM_Start(&htim4, IGNITION_COIL_4_CHANNEL);
 
-    __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_1_CHANNEL, 0);
-    __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_2_CHANNEL, 0);
-    __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_3_CHANNEL, 0);
-    __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_4_CHANNEL, 0);
+    __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_1_CHANNEL, 0);
+    __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_2_CHANNEL, 0);
+    __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_3_CHANNEL, 0);
+    __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_4_CHANNEL, 0);
 }
 
 // ============================================================
@@ -42,20 +42,20 @@ void Ignition_ScheduleSpark(uint8_t cylinder_index, float advance_deg, float dwe
 
     switch (cylinder_index) {
         case 0:
-            __HAL_TIM_SET_AUTORELOAD(&htim1, delay_ticks + pulse_ticks);
-            __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_1_CHANNEL, delay_ticks);
+            __HAL_TIM_SET_AUTORELOAD(&htim4, delay_ticks + pulse_ticks);
+            __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_1_CHANNEL, delay_ticks);
             break;
         case 1:
-            __HAL_TIM_SET_AUTORELOAD(&htim1, delay_ticks + pulse_ticks);
-            __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_2_CHANNEL, delay_ticks);
+            __HAL_TIM_SET_AUTORELOAD(&htim4, delay_ticks + pulse_ticks);
+            __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_2_CHANNEL, delay_ticks);
             break;
         case 2:
-            __HAL_TIM_SET_AUTORELOAD(&htim1, delay_ticks + pulse_ticks);
-            __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_3_CHANNEL, delay_ticks);
+            __HAL_TIM_SET_AUTORELOAD(&htim4, delay_ticks + pulse_ticks);
+            __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_3_CHANNEL, delay_ticks);
             break;
         case 3:
-            __HAL_TIM_SET_AUTORELOAD(&htim1, delay_ticks + pulse_ticks);
-            __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_4_CHANNEL, delay_ticks);
+            __HAL_TIM_SET_AUTORELOAD(&htim4, delay_ticks + pulse_ticks);
+            __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_4_CHANNEL, delay_ticks);
             break;
     }
 }
@@ -82,25 +82,25 @@ void Ignition_TestPulse(uint8_t cylinder_index, float dwell_ms) {
         case 0:
             // Configura o Período (ARR) e o Compare (CCR) para gerar um único pulso
             // com a duração exata do dwell.
-            htim1.Instance->ARR = pulse_ticks + 10; // Período ligeiramente maior para garantir o pulso completo
-            htim1.Instance->CCR1 = pulse_ticks;     // Largura do pulso para o Canal 1
+            htim4.Instance->ARR = pulse_ticks + 10; // Período ligeiramente maior para garantir o pulso completo
+            htim4.Instance->CCR1 = pulse_ticks;     // Largura do pulso para o Canal 1
             // Inicia o timer em modo "One-Pulse". O hardware gera o pulso e para automaticamente.
-            HAL_TIM_OnePulse_Start(&htim1, IGNITION_COIL_1_CHANNEL);
+            HAL_TIM_OnePulse_Start(&htim4, IGNITION_COIL_1_CHANNEL);
             break;
         case 1:
-            htim1.Instance->ARR = pulse_ticks + 10;
-            htim1.Instance->CCR2 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim1, IGNITION_COIL_2_CHANNEL);
+            htim4.Instance->ARR = pulse_ticks + 10;
+            htim4.Instance->CCR2 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim4, IGNITION_COIL_2_CHANNEL);
             break;
         case 2:
-            htim1.Instance->ARR = pulse_ticks + 10;
-            htim1.Instance->CCR3 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim1, IGNITION_COIL_3_CHANNEL);
+            htim4.Instance->ARR = pulse_ticks + 10;
+            htim4.Instance->CCR3 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim4, IGNITION_COIL_3_CHANNEL);
             break;
         case 3:
-            htim1.Instance->ARR = pulse_ticks + 10;
-            htim1.Instance->CCR4 = pulse_ticks;
-            HAL_TIM_OnePulse_Start(&htim1, IGNITION_COIL_4_CHANNEL);
+            htim4.Instance->ARR = pulse_ticks + 10;
+            htim4.Instance->CCR4 = pulse_ticks;
+            HAL_TIM_OnePulse_Start(&htim4, IGNITION_COIL_4_CHANNEL);
             break;
     }
 }
@@ -110,10 +110,10 @@ void Ignition_TestPulse(uint8_t cylinder_index, float dwell_ms) {
 // ============================================================
 void Ignition_TimerCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM1) {
-        __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_1_CHANNEL, 0);
-        __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_2_CHANNEL, 0);
-        __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_3_CHANNEL, 0);
-        __HAL_TIM_SET_COMPARE(&htim1, IGNITION_COIL_4_CHANNEL, 0);
+        __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_1_CHANNEL, 0);
+        __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_2_CHANNEL, 0);
+        __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_3_CHANNEL, 0);
+        __HAL_TIM_SET_COMPARE(&htim4, IGNITION_COIL_4_CHANNEL, 0);
     }
 }
 

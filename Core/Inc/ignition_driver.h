@@ -13,7 +13,7 @@
 
 extern const long TIMER_CLOCK_FREQ_HZ;
 
-extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim4;
 
 // Mapeamento dos canais
 #define IGNITION_COIL_1_CHANNEL TIM_CHANNEL_1
