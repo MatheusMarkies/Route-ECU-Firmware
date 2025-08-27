@@ -60,10 +60,6 @@ void Ignition_ScheduleSpark(uint8_t cylinder_index, float advance_deg, float dwe
     }
 }
 
-/* ... (conteúdo anterior, incluindo a função Ignition_ScheduleSpark) ... */
-
-// --- Implementação da Função de Debug ---
-
 /**
  * @brief Dispara um único pulso de teste numa bobina de ignição específica.
  */
