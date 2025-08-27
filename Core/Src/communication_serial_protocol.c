@@ -8,11 +8,6 @@
 #include "communication_serial_protocol.h"
 #include "main.h"
 
-#include "math.h"
-#include "string.h"
-#include "stdio.h"
-#include <stdlib.h>
-
 void PROTOCOL_RX_Callback() {
 	PROTOCOL_RX_Buffer[PROTOCOL_Stream_Index++] = PROTOCOL_RX_Stream_Data;
 	last_rx_tick = HAL_GetTick();
@@ -73,8 +68,8 @@ uint8_t sendCommand(char command[], char answer[], uint32_t timeout) {
 	protocol_status = FREE;
 
 	if (!ATisOK) {
-		DEBUG_PRINT((char*) PROTOCOL_RX_Buffer);
-		DEBUG_PRINT("CMD Timeout...\r\n");
+		printf((char*) PROTOCOL_RX_Buffer);
+		printf("CMD Timeout...\r\n");
 	}
 	return ATisOK;
 }

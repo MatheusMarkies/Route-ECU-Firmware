@@ -9,6 +9,10 @@
 #define INC_COMMUNICATION_SERIAL_PROTOCOL_H_
 
 #include "main.h"
+#include "math.h"
+#include "string.h"
+#include "stdio.h"
+#include <stdlib.h>
 
 typedef enum {
 	//STARTING
@@ -38,5 +42,10 @@ const uint32_t SEND_AT_INTERVAL_MS = 50;
 volatile uint32_t last_read_serial_timestamp = 0;
 volatile uint32_t last_send_at_timestamp = 0;
 
+void PROTOCOL_RX_Callback(void);
+void PROTOCOL_TX_Callback(void);
+void resetBuffers(void);
+uint8_t sendCommand(char command[], char answer[], uint32_t timeout);
+void directTransmit(char *cmd);
 
 #endif /* INC_COMMUNICATION_SERIAL_PROTOCOL_H_ */

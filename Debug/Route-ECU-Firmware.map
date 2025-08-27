@@ -223,7 +223,7 @@ Discarded input sections
  .text.directTransmit
                 0x00000000       0x4c ./Core/Src/communication_serial_protocol.o
  .debug_info    0x00000000      0xafa ./Core/Src/communication_serial_protocol.o
- .debug_abbrev  0x00000000      0x23d ./Core/Src/communication_serial_protocol.o
+ .debug_abbrev  0x00000000      0x23f ./Core/Src/communication_serial_protocol.o
  .debug_aranges
                 0x00000000       0x40 ./Core/Src/communication_serial_protocol.o
  .debug_rnglists
