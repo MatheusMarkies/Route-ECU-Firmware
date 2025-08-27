@@ -1,3 +1,4 @@
+"./Core/Src/communication_serial_protocol.o"
 "./Core/Src/crank_decoder.o"
 "./Core/Src/engine_control.o"
 "./Core/Src/engine_sensors.o"

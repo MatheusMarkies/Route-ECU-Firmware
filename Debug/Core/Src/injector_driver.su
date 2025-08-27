@@ -1,4 +1,4 @@
 ../Core/Src/injector_driver.c:14:6:Injector_Init	8	static
 ../Core/Src/injector_driver.c:30:6:Injector_SchedulePulse	24	static
-../Core/Src/injector_driver.c:72:6:Injector_TestPulse	24	static
-../Core/Src/injector_driver.c:112:6:Injector_TimerCallback	16	static
+../Core/Src/injector_driver.c:65:6:Injector_TestPulse	24	static
+../Core/Src/injector_driver.c:104:6:Injector_TimerCallback	16	static
