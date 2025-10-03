@@ -11,11 +11,9 @@
 #include "main.h"
 #include "ecu_config.h"
 
-// Declaração da handle do ADC, para que o main.c possa passá-la para nós.
-extern ADC_HandleTypeDef hadc1; // Supondo que ADC1 é para os sensores
-extern ADC_HandleTypeDef hadc2; // Supondo que ADC2 é para a bateria
+extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
 
-// --- Definição das Variáveis Globais ---
 extern EcuConfig_t  g_ecuConfig;
 extern EngineData_t g_engineData;
 extern EngineState_t g_engineState;
@@ -31,12 +29,10 @@ uint16_t g_adc_dma_buffer_sensors[NUM_SENSOR_CHANNELS];
 uint16_t g_adc_dma_buffer_battery[1];
 volatile int g_adc_conversion_complete = 0;
 
-// Arrays globais para armazenamento genérico
 uint16_t g_raw_adc_values[12];
 float    g_sensor_voltages[12];
 float    g_battery_adc_voltage;
 
-// Arrays para armazenamento genérico, como no seu rascunho
 float g_sensor_voltages[12];
 float g_battery_adc_voltage;
 

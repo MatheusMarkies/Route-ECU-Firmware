@@ -100,7 +100,7 @@ typedef struct {
     float baro_ref_kpa; // Pressão barométrica de referência
     float gamma_min, gamma_max;
 
-    // --- Módulos de Controlo ---
+    // --- Módulos de Controle ---
     ClosedLoopO2Config_t clo; // Configuração para Malha Fechada (O2)
     DfcoConfig_t         dfco; // Configuração para Corte de Combustível
 
@@ -115,7 +115,7 @@ typedef struct {
 } EcuConfig_t;
 
 
-// --- Estruturas de Dados em Tempo Real (Não fazem parte da config) ---
+// --- Estruturas de Dados em Tempo Real ---
 typedef struct {
     float tps_percent;
     float ect_celsius;
