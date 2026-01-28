@@ -31,7 +31,7 @@
 #include "communication_serial_protocol.h"
 #include "MAX9924_driver.h"
 #include "engine_control.h"
-
+#include "Battery_manager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,6 +50,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
 
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
@@ -76,6 +77,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 void I2C_Scanner(I2C_HandleTypeDef *hi2c);
 char* ADC_GenerateJSON(void);
@@ -102,37 +104,33 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
-void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim->Instance == TIM5 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
-    {
-        uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (htim->Instance == TIM5 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
+		uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
 
-        ENGINE_VR_OutputCompareCallback(current_time, ckp_sensor, cmp_sensor);
+		ENGINE_VR_OutputCompareCallback(current_time, ckp_sensor, cmp_sensor);
 
-        uint32_t next_compare = current_time + 10;
-        __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, next_compare);
-    }
+		uint32_t next_compare = current_time + 10;
+		__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, next_compare);
+	}
 
-    if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_5)
-    {
-        uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
+	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_5) {
+		uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
 
-        ENGINE_Injector_OutputCompareCallback(current_time);
+		ENGINE_Injector_OutputCompareCallback(current_time);
 
-        uint32_t next_compare = current_time + 10;
-        __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_5, next_compare);
-    }
+		uint32_t next_compare = current_time + 10;
+		__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_5, next_compare);
+	}
 
-    if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_6)
-    {
-        uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
+	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_6) {
+		uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
 
-        ENGINE_Ignition_OutputCompareCallback(current_time);
+		ENGINE_Ignition_OutputCompareCallback(current_time);
 
-        uint32_t next_compare = current_time + 10;
-        __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_6, next_compare);
-    }
+		uint32_t next_compare = current_time + 10;
+		__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_6, next_compare);
+	}
 }
 
 void I2C_Scanner(I2C_HandleTypeDef *hi2c) {
@@ -213,32 +211,67 @@ char* ADC_GenerateJSON(void) {
 }
 
 char* VR_GenerateJSON(void) {
-    cJSON *root = cJSON_CreateObject();
-    if (root == NULL) {
-        return NULL;
-    }
+	cJSON *root = cJSON_CreateObject();
+	if (root == NULL) {
+		return NULL;
+	}
 
-    cJSON *ckp = cJSON_CreateObject();
-    cJSON *cmp = cJSON_CreateObject();
-    if (ckp == NULL || cmp == NULL) {
-        cJSON_Delete(root);
-        return NULL;
-    }
+	cJSON *ckp = cJSON_CreateObject();
+	cJSON *cmp = cJSON_CreateObject();
+	if (ckp == NULL || cmp == NULL) {
+		cJSON_Delete(root);
+		return NULL;
+	}
 
-    cJSON_AddNumberToObject(ckp, "rpm", ckp_sensor.rpm);
-    cJSON_AddNumberToObject(ckp, "freq", ckp_sensor.frequency_hz);
-    cJSON_AddNumberToObject(ckp, "pulses", ckp_sensor.pulse_count);
-    cJSON_AddNumberToObject(ckp, "revolutions", ckp_sensor.revolution_count);
-    cJSON_AddNumberToObject(ckp, "period", ckp_sensor.period);
+	cJSON_AddNumberToObject(ckp, "rpm", ckp_sensor.rpm);
+	cJSON_AddNumberToObject(ckp, "freq", ckp_sensor.frequency_hz);
+	cJSON_AddNumberToObject(ckp, "pulses", ckp_sensor.pulse_count);
+	cJSON_AddNumberToObject(ckp, "revolutions", ckp_sensor.revolution_count);
+	cJSON_AddNumberToObject(ckp, "period", ckp_sensor.period);
 
-    cJSON_AddNumberToObject(cmp, "rpm", cmp_sensor.rpm);
-    cJSON_AddNumberToObject(cmp, "freq", cmp_sensor.frequency_hz);
-    cJSON_AddNumberToObject(cmp, "pulses", cmp_sensor.pulse_count);
-    cJSON_AddNumberToObject(cmp, "revolutions", cmp_sensor.revolution_count);
-    cJSON_AddNumberToObject(cmp, "period", cmp_sensor.period);
+	cJSON_AddNumberToObject(cmp, "rpm", cmp_sensor.rpm);
+	cJSON_AddNumberToObject(cmp, "freq", cmp_sensor.frequency_hz);
+	cJSON_AddNumberToObject(cmp, "pulses", cmp_sensor.pulse_count);
+	cJSON_AddNumberToObject(cmp, "revolutions", cmp_sensor.revolution_count);
+	cJSON_AddNumberToObject(cmp, "period", cmp_sensor.period);
 
-    cJSON_AddItemToObject(root, "ckp", ckp);
-    cJSON_AddItemToObject(root, "cmp", cmp);
+	cJSON_AddItemToObject(root, "ckp", ckp);
+	cJSON_AddItemToObject(root, "cmp", cmp);
+
+	char *json_string = cJSON_PrintUnformatted(root);
+
+	if (json_string != NULL) {
+		size_t total_len = strlen(json_string) + 1;
+		char *final_string = (char*) malloc(total_len);
+		if (final_string != NULL) {
+			snprintf(final_string, total_len, "%s", json_string);
+		}
+		cJSON_free(json_string);
+		cJSON_Delete(root);
+		return final_string;
+	}
+
+	cJSON_Delete(root);
+	return NULL;
+}
+
+char* BATTERY_GenerateJSON(void) {
+	cJSON *root = cJSON_CreateObject();
+	if (root == NULL) {
+		return NULL;
+	}
+
+	cJSON *battery_object = cJSON_CreateObject();
+	if (battery_object == NULL) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+
+	char str_buffer[16];
+	snprintf(str_buffer, sizeof(str_buffer), "%.3f", battery.voltage);
+	cJSON_AddRawToObject(battery_object, "voltage", str_buffer);
+
+	cJSON_AddItemToObject(root, "battery", battery_object);
 
 	char *json_string = cJSON_PrintUnformatted(root);
 
@@ -309,6 +342,7 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM4_Init();
   MX_TIM1_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 	I2C_Scanner(&hi2c1);
 	I2C_Scanner(&hi2c2);
@@ -317,13 +351,15 @@ int main(void)
 	TIM4_Init_Config();
 	TIM5_Init_Config();
 
+	HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
+
 	//Protocolo de Software Desktop
 	huart_instance = huart1;
 
-	serial_ResetBuffers();
+	SERIAL_ResetBuffers();
 	HAL_UART_Receive_IT(&huart_instance, &PROTOCOL_RX_Stream_Data, 1);
 
-	if(SERIAL_CheckConnection()){
+	if (SERIAL_CheckConnection()) {
 		printf("Connected to Software!\r\n");
 	}
 
@@ -349,39 +385,63 @@ int main(void)
 			ADC_Read_Cycle();
 		}
 
-		if(is_connected){
-		static uint32_t last_vr_send = 0;
-		if (HAL_GetTick() - last_vr_send >= 1000) {
-			last_vr_send = HAL_GetTick();
-
-			char *vr_json = VR_GenerateJSON();
-			if (vr_json != NULL) {
-				//printf("%s", vr_json);
-				SERIAL_SendCommand(vr_json, "OK", 5000);
-
-				free(vr_json);
-			} else {
-				printf("Error generating JSON from VR sensors\r\n");
-			}
+		static uint32_t last_BATTERY_read = 0;
+		if (HAL_GetTick() - last_BATTERY_read >= 15) {
+			last_BATTERY_read = HAL_GetTick();
+			BATTERY_ReadVoltageFiltered();
 		}
 
-		static uint32_t last_ADC_send = 0;
-		if (HAL_GetTick() - last_ADC_send >= 1000) {
-			last_ADC_send = HAL_GetTick();
+		if (is_connected) {
+			static uint32_t last_vr_send = 0;
+			if (HAL_GetTick() - last_vr_send >= 1000) {
+				last_vr_send = HAL_GetTick();
 
-			char *adc_json = ADC_GenerateJSON();
+				char *vr_json = VR_GenerateJSON();
+				if (vr_json != NULL) {
+					//printf("%s", vr_json);
+					SERIAL_SendCommand(vr_json, "OK", 5000);
 
-			if (adc_json != NULL) {
-				//printf("%s\r\n", adc_json);
-				SERIAL_SendCommand(adc_json, "OK", 200);
-
-				free(adc_json);
-			} else {
-				printf("Error generating JSON from ADCs sensors\r\n");
+					free(vr_json);
+				} else {
+					printf("Error generating JSON from VR sensors\r\n");
+				}
 			}
 
-			printf("\r\n");
-		}
+			static uint32_t last_ADC_send = 0;
+			if (HAL_GetTick() - last_ADC_send >= 1000) {
+				last_ADC_send = HAL_GetTick();
+
+				char *adc_json = ADC_GenerateJSON();
+
+				if (adc_json != NULL) {
+					//printf("%s\r\n", adc_json);
+					SERIAL_SendCommand(adc_json, "OK", 200);
+
+					free(adc_json);
+				} else {
+					printf("Error generating JSON from ADCs sensors\r\n");
+				}
+
+				printf("\r\n");
+			}
+
+			static uint32_t last_BATTERY_send = 0;
+			if (HAL_GetTick() - last_BATTERY_send >= 1000) {
+				last_BATTERY_send = HAL_GetTick();
+
+				char *battery_json = BATTERY_GenerateJSON();
+
+				if (battery_json != NULL) {
+					//printf("%s\r\n", battery_json);
+					SERIAL_SendCommand(battery_json, "OK", 200);
+
+					free(battery_json);
+				} else {
+					printf("Error generating JSON from Battery Manager\r\n");
+				}
+
+				printf("\r\n");
+			}
 		}
     /* USER CODE END WHILE */
 
@@ -447,6 +507,75 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_MultiModeTypeDef multimode = {0};
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+
+  /** Common config
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
+  hadc1.Init.Resolution = ADC_RESOLUTION_16B;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.LowPowerAutoWait = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+  hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
+  hadc1.Init.OversamplingMode = DISABLE;
+  hadc1.Init.Oversampling.Ratio = 1;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure the ADC multi-mode
+  */
+  multimode.Mode = ADC_MODE_INDEPENDENT;
+  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_10;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  sConfig.OffsetSignedSaturation = DISABLE;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
 }
 
 /**
@@ -905,6 +1034,7 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -917,30 +1047,33 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 void TIM1_Init_Config(void) {
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
-    __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 0);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_4, 0);
 
-	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_5, __HAL_TIM_GET_COUNTER(&htim1) + 10); //__HAL_TIM_GET_COUNTER(&htim1) + 10 a cada 10 ticks
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_5,
+			__HAL_TIM_GET_COUNTER(&htim1) + 10); //__HAL_TIM_GET_COUNTER(&htim1) + 10 a cada 10 ticks
 	HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_5);
 
-	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_6, __HAL_TIM_GET_COUNTER(&htim1) + 10); //__HAL_TIM_GET_COUNTER(&htim1) + 10 a cada 10 ticks
+	__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_6,
+			__HAL_TIM_GET_COUNTER(&htim1) + 10); //__HAL_TIM_GET_COUNTER(&htim1) + 10 a cada 10 ticks
 	HAL_TIM_OC_Start_IT(&htim1, TIM_CHANNEL_6);
 }
 
 void TIM4_Init_Config(void) {
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 0);
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, 0);
-    __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
+	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
+	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 0);
+	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, 0);
+	__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_4, 0);
 }
 
 void TIM5_Init_Config(void) {
 	HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);
 	HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_2);
 
-	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_3, __HAL_TIM_GET_COUNTER(&htim5) + 10); //__HAL_TIM_GET_COUNTER(&htim5) + 10 a cada 10 ticks
+	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_3,
+			__HAL_TIM_GET_COUNTER(&htim5) + 10); //__HAL_TIM_GET_COUNTER(&htim5) + 10 a cada 10 ticks
 	HAL_TIM_OC_Start_IT(&htim5, TIM_CHANNEL_3);
 }
 

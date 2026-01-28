@@ -42,6 +42,8 @@ extern const uint32_t SEND_AT_INTERVAL_MS;
 extern volatile uint32_t last_read_serial_timestamp;
 extern volatile uint32_t last_send_at_timestamp;
 
+extern volatile uint8_t is_connected;
+
 // ============================================================================
 // PROTÓTIPOS DE FUNÇÕES
 // ============================================================================

@@ -1,0 +1,3 @@
+../Core/Src/Battery_manager.c:13:10:BATTERY_ReadRaw	2
+../Core/Src/Battery_manager.c:36:7:BATTERY_ReadVoltage	1
+../Core/Src/Battery_manager.c:45:6:BATTERY_ReadVoltageFiltered	2

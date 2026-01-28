@@ -60,7 +60,7 @@ uint8_t SERIAL_SendCommand(char command[], char answer[], uint32_t timeout) {
 
 	send_tick = HAL_GetTick();
 
-	serial_ResetBuffers();
+	SERIAL_ResetBuffers();
 
 	HAL_UART_Receive_IT(&huart_instance, &PROTOCOL_RX_Stream_Data, 1);
 
@@ -100,7 +100,7 @@ uint8_t SERIAL_SendCommand(char command[], char answer[], uint32_t timeout) {
 }
 
 uint8_t SERIAL_CheckConnection(void){
-	if(serial_SendCommand("AT","OK",1000))
+	if(SERIAL_SendCommand("AT","OK",1000))
 		is_connected = 1;
 	else{
 		is_connected = 0;
@@ -110,7 +110,7 @@ uint8_t SERIAL_CheckConnection(void){
 }
 
 void SERIAL_DirectTransmit(char *cmd) {
-	serial_ResetBuffers();
+	SERIAL_ResetBuffers();
 	HAL_UART_Transmit(&huart_instance, (uint8_t*) cmd, strlen(cmd), 1000);
 	HAL_UART_Receive(&huart_instance, PROTOCOL_RX_Buffer, sizeof(PROTOCOL_RX_Buffer), 1000);
 
