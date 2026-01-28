@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -49,8 +49,6 @@ extern "C" {
 
 /* USER CODE END EM */
 
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
-
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -59,48 +57,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Bat_Voltage_Pin GPIO_PIN_0
-#define Bat_Voltage_GPIO_Port GPIOC
-#define Sensor_MAP_Pin GPIO_PIN_1
-#define Sensor_MAP_GPIO_Port GPIOC
 #define CKP_Pin GPIO_PIN_0
 #define CKP_GPIO_Port GPIOA
 #define CMP_Pin GPIO_PIN_1
 #define CMP_GPIO_Port GPIOA
-#define PWM_MCU_OUT_4_Pin GPIO_PIN_2
-#define PWM_MCU_OUT_4_GPIO_Port GPIOA
-#define PWM_MCU_OUT_5_Pin GPIO_PIN_3
-#define PWM_MCU_OUT_5_GPIO_Port GPIOA
-#define SPI_CJ125_SCK_Pin GPIO_PIN_5
-#define SPI_CJ125_SCK_GPIO_Port GPIOA
-#define Injector_1_Pin GPIO_PIN_9
-#define Injector_1_GPIO_Port GPIOE
-#define Injector_2_Pin GPIO_PIN_11
-#define Injector_2_GPIO_Port GPIOE
-#define Injector_3_Pin GPIO_PIN_13
-#define Injector_3_GPIO_Port GPIOE
-#define Injector_4_Pin GPIO_PIN_14
-#define Injector_4_GPIO_Port GPIOE
-#define CMP_OUT_Pin GPIO_PIN_11
-#define CMP_OUT_GPIO_Port GPIOD
-#define Input_Ig_1_Pin GPIO_PIN_12
-#define Input_Ig_1_GPIO_Port GPIOD
-#define Input_Ig_2_Pin GPIO_PIN_13
-#define Input_Ig_2_GPIO_Port GPIOD
-#define Input_Ig_3_Pin GPIO_PIN_14
-#define Input_Ig_3_GPIO_Port GPIOD
-#define Input_Ig_4_Pin GPIO_PIN_15
-#define Input_Ig_4_GPIO_Port GPIOD
-#define PWM_MCU_OUT_1_Pin GPIO_PIN_6
-#define PWM_MCU_OUT_1_GPIO_Port GPIOC
-#define PWM_MCU_OUT_2_Pin GPIO_PIN_7
-#define PWM_MCU_OUT_2_GPIO_Port GPIOC
-#define SPI_CJ125_MOSI_Pin GPIO_PIN_7
-#define SPI_CJ125_MOSI_GPIO_Port GPIOD
-#define SPI_CJ125_MISO_Pin GPIO_PIN_4
-#define SPI_CJ125_MISO_GPIO_Port GPIOB
-#define PWM_MCU_OUT_3_Pin GPIO_PIN_5
-#define PWM_MCU_OUT_3_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

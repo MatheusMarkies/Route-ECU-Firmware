@@ -1,0 +1,9 @@
+../Core/Src/ADC_driver.c:61:26:AD7998_ConfigureAllChannels	1
+../Core/Src/ADC_driver.c:25:26:AD7998_ReadChannel	6
+../Core/Src/ADC_driver.c:83:19:AD7998_Init	5
+../Core/Src/ADC_driver.c:137:19:AD7998_U16_ReadSensor	3
+../Core/Src/ADC_driver.c:144:19:AD7998_U17_ReadSensor	3
+../Core/Src/ADC_driver.c:151:19:AD7998_U16_ReadAllChannels	4
+../Core/Src/ADC_driver.c:165:19:AD7998_U17_ReadAllChannels	4
+../Core/Src/ADC_driver.c:179:13:AD7998_U16_GetSensorName	2
+../Core/Src/ADC_driver.c:187:13:AD7998_U17_GetSensorName	2

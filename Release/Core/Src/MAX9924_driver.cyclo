@@ -1,0 +1,4 @@
+../Core/Src/MAX9924_driver.c:18:19:VR_Init	1
+../Core/Src/MAX9924_driver.c:50:6:VR_InputCaptureCallback	5
+../Core/Src/MAX9924_driver.c:99:13:VR_GetSensorName	2
+../Core/Src/MAX9924_driver.c:113:5:VR_GenerateJSON	4

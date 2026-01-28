@@ -1,6 +1,0 @@
-../Core/Src/ignition_driver.c:16:6:Ignition_Init	1
-../Core/Src/ignition_driver.c:31:6:Ignition_ScheduleSpark	6
-../Core/Src/ignition_driver.c:66:6:Ignition_TestPulse	8
-../Core/Src/ignition_driver.c:107:6:Ignition_TimerCallback	2
-../Core/Src/ignition_driver.c:121:10:DegreesToTimeUs	1
-../Core/Src/ignition_driver.c:129:10:ApplyDwellCompensation	4
