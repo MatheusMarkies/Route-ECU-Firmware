@@ -70,26 +70,24 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type){
     uint32_t rpm = 1.0f/(float)delta * 1000000.0f;
     rpm *= 60.0f/(float)temp.pulse_count_per_rev;
 
-    float ratio = delta/temp.period;
+    float ratio = (float)delta/(float)temp.period;
 
     if(ratio >= 2.5f){
     	temp.isSync = true;
     	temp.pulse_count = 0;
     	temp.revolution_count += 1;
-    }
+    }else
+    	temp.frequency_hz = 1.0f/(float)delta;
+
+    temp.last_edge_time = current_time;
+	temp.period = delta;
 
 	if(type == SENSOR_CKP){
 		ckp_sensor = temp;
-
 		ckp_sensor.pulse_count+=1;
-		ckp_sensor.last_edge_time = current_time;
-		ckp_sensor.period = delta;
 	}else{
 		cmp_sensor = temp;
-
 		cmp_sensor.pulse_count+=1;
-		cmp_sensor.last_edge_time = current_time;
-		cmp_sensor.period = delta;
 	}
 }
 
@@ -105,33 +103,4 @@ const char* VR_GetSensorName(VR_Sensor_Type_t type) {
         default:
             return "UNKNOWN";
     }
-}
-
-/**
- * @brief Gera JSON com dados dos sensores VR
- */
-int VR_GenerateJSON(char *buffer, size_t buffer_size) {
-    if (buffer == NULL || buffer_size == 0) {
-        return -1;
-    }
-
-    int offset = snprintf(buffer, buffer_size,
-        "VRSENSORS:{\"ckp\":{\"rpm\":%.2f,\"freq_hz\":%.2f,\"pulses\":%lu,"
-        "\"revolutions\":%lu,\"period_ms\":%lu,\"valid\":%s},"
-        "\"cmp\":{\"rpm\":%.2f,\"freq_hz\":%.2f,\"pulses\":%lu,"
-        "\"revolutions\":%lu,\"period_ms\":%lu,\"valid\":%s}}\r\n",
-        ckp_sensor.rpm,
-        ckp_sensor.frequency_hz,
-        ckp_sensor.pulse_count,
-        ckp_sensor.revolution_count,
-        ckp_sensor.period,
-
-        cmp_sensor.rpm,
-        cmp_sensor.frequency_hz,
-        cmp_sensor.pulse_count,
-        cmp_sensor.revolution_count,
-        cmp_sensor.period
-    );
-
-    return (offset < buffer_size) ? offset : -1;
 }

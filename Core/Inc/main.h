@@ -49,6 +49,8 @@ extern "C" {
 
 /* USER CODE END EM */
 
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
@@ -61,6 +63,22 @@ void Error_Handler(void);
 #define CKP_GPIO_Port GPIOA
 #define CMP_Pin GPIO_PIN_1
 #define CMP_GPIO_Port GPIOA
+#define Injector_1_Pin GPIO_PIN_9
+#define Injector_1_GPIO_Port GPIOE
+#define Injector_2_Pin GPIO_PIN_11
+#define Injector_2_GPIO_Port GPIOE
+#define Injector_3_Pin GPIO_PIN_13
+#define Injector_3_GPIO_Port GPIOE
+#define Injector_4_Pin GPIO_PIN_14
+#define Injector_4_GPIO_Port GPIOE
+#define Input_Ig_1_Pin GPIO_PIN_12
+#define Input_Ig_1_GPIO_Port GPIOD
+#define Input_Ig_2_Pin GPIO_PIN_13
+#define Input_Ig_2_GPIO_Port GPIOD
+#define Input_Ig_3_Pin GPIO_PIN_14
+#define Input_Ig_3_GPIO_Port GPIOD
+#define Input_Ig_4_Pin GPIO_PIN_15
+#define Input_Ig_4_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
 

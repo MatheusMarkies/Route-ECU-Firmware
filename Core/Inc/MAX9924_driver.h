@@ -55,6 +55,8 @@ typedef struct {
     float rpm;                      // Rotações por minuto calculadas
     float frequency_hz;             // Frequência em Hz
 
+    uint16_t tooths;
+
     uint32_t timeout_ms;            // Timeout para considerar sinal inválido
     bool isSync;
 
@@ -84,13 +86,5 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type);
  * @return String com nome do sensor
  */
 const char* VR_GetSensorName(VR_Sensor_Type_t type);
-
-/**
- * @brief Gera JSON com dados dos sensores VR
- * @param buffer Buffer para armazenar o JSON
- * @param buffer_size Tamanho do buffer
- * @return Número de caracteres escritos, ou -1 em caso de erro
- */
-int VR_GenerateJSON(char *buffer, size_t buffer_size);
 
 #endif /* INC_MAX9924_DRIVER_H_ */

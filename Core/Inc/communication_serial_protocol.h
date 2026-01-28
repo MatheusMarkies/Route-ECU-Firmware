@@ -48,9 +48,9 @@ extern volatile uint32_t last_send_at_timestamp;
 
 void PROTOCOL_RX_Callback(void);
 void PROTOCOL_TX_Callback(void);
-void serial_ResetBuffers(void);
-uint8_t serial_SendCommand(char command[], char answer[], uint32_t timeout);
-void serial_CheckConnection(void);
-void serial_DirectTransmit(char *cmd);
+void SERIAL_ResetBuffers(void);
+uint8_t SERIAL_SendCommand(char command[], char answer[], uint32_t timeout);
+uint8_t SERIAL_CheckConnection(void);
+void SERIAL_DirectTransmit(char *cmd);
 
 #endif /* INC_COMMUNICATION_SERIAL_PROTOCOL_H_ */

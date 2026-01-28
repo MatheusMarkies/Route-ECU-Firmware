@@ -44,13 +44,13 @@ void PROTOCOL_TX_Callback(void) {
 	}
 }
 
-void serial_ResetBuffers(void) {
+void SERIAL_ResetBuffers(void) {
 	PROTOCOL_RX_Stream_Data = 0;
 	PROTOCOL_Stream_Index = 0;
 	memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
 }
 
-uint8_t serial_SendCommand(char command[], char answer[], uint32_t timeout) {
+uint8_t SERIAL_SendCommand(char command[], char answer[], uint32_t timeout) {
 	uint8_t ATisOK = 0;
 	if(!is_connected)
 	{
@@ -99,14 +99,17 @@ uint8_t serial_SendCommand(char command[], char answer[], uint32_t timeout) {
 	return ATisOK;
 }
 
-void serial_CheckConnection(void){
+uint8_t SERIAL_CheckConnection(void){
 	if(serial_SendCommand("AT","OK",1000))
 		is_connected = 1;
-	else
+	else{
 		is_connected = 0;
+		return 0;
+	}
+	return 1;
 }
 
-void serial_DirectTransmit(char *cmd) {
+void SERIAL_DirectTransmit(char *cmd) {
 	serial_ResetBuffers();
 	HAL_UART_Transmit(&huart_instance, (uint8_t*) cmd, strlen(cmd), 1000);
 	HAL_UART_Receive(&huart_instance, PROTOCOL_RX_Buffer, sizeof(PROTOCOL_RX_Buffer), 1000);

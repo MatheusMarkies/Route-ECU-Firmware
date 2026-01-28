@@ -2,6 +2,7 @@
 "./Core/Src/MAX9924_driver.o"
 "./Core/Src/cJSON.o"
 "./Core/Src/communication_serial_protocol.o"
+"./Core/Src/engine_control.o"
 "./Core/Src/main.o"
 "./Core/Src/stm32h7xx_hal_msp.o"
 "./Core/Src/stm32h7xx_it.o"

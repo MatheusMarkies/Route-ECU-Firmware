@@ -1,0 +1,7 @@
+../Core/Src/engine_control.c:58:6:ENGINE_VR_OutputCompareCallback	7
+../Core/Src/engine_control.c:64:6:ENGINE_Injector_FireNow	7
+../Core/Src/engine_control.c:80:6:ENGINE_Injector_Schedule	7
+../Core/Src/engine_control.c:93:6:ENGINE_Injector_Trigger	2
+../Core/Src/engine_control.c:108:6:ENGINE_Injector_StopAll	1
+../Core/Src/engine_control.c:115:6:ENGINE_Injector_OutputCompareCallback	4
+../Core/Src/engine_control.c:133:6:ENGINE_Ignition_OutputCompareCallback	1
