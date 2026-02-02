@@ -62,8 +62,8 @@ typedef enum {
 typedef void (*CommandCallback_t)(Command_Result_t result, char* response);
 
 typedef struct {
-    char cmd[1024];
-    char expected_answer[64];
+    char* cmd;
+    char* expected_answer;
     uint32_t timeout;
     uint32_t start_tick;
     uint32_t send_attempt_tick;

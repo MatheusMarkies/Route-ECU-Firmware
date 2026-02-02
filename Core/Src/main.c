@@ -291,6 +291,51 @@ char* BATTERY_GenerateJSON(void) {
 	return NULL;
 }
 
+void SERIAL_VrJSONCallback(Command_Result_t result, char *response) {
+	if (result == CMD_RESULT_SUCCESS){
+		char *vr_json = VR_GenerateJSON();
+		if (vr_json != NULL) {
+			SERIAL_SendCommand(vr_json, "OK", 200, NULL);
+
+			free(vr_json);
+		} else {
+			printf("Error generating JSON from VR sensors\r\n");
+		}
+	}else {
+		return;
+	}
+}
+
+void SERIAL_ADCJSONCallback(Command_Result_t result, char *response) {
+	if (result == CMD_RESULT_SUCCESS){
+		char *adc_json = ADC_GenerateJSON();
+		if (adc_json != NULL) {
+			SERIAL_SendCommand(adc_json, "OK", 200, NULL);
+
+			free(adc_json);
+		} else {
+			printf("Error generating JSON from ADCs sensors\r\n");
+		}
+	}else {
+		return;
+	}
+}
+
+void SERIAL_BatteryJSONCallback(Command_Result_t result, char *response) {
+	if (result == CMD_RESULT_SUCCESS){
+		char *battery_json = BATTERY_GenerateJSON();
+		if (battery_json != NULL) {
+			SERIAL_SendCommand(battery_json, "OK", 200, NULL);
+
+			free(battery_json);
+		} else {
+			printf("Error generating JSON from Battery Manager\r\n");
+		}
+	}else {
+		return;
+	}
+}
+
 void ADC_Read_Cycle(void) {
 	if (AD7998_U16_ReadAllChannels() != HAL_OK) {
 		printf("Erro ao ler ADC U16\r\n");
@@ -390,60 +435,31 @@ int main(void)
 			BATTERY_ReadVoltageFiltered();
 		}
 
-		//if (is_connected) {
-			SERIAL_CheckRXCommand();
+		SERIAL_CheckRXCommand();
 
+		if (is_connected) {
 			static uint32_t last_vr_send = 0;
 			if (HAL_GetTick() - last_vr_send >= 1000) {
 				last_vr_send = HAL_GetTick();
 
-				char *vr_json = VR_GenerateJSON();
-				if (vr_json != NULL) {
-					//printf("%s", vr_json);
-					SERIAL_SendCommand(vr_json, "OK", 200, NULL);
-
-					free(vr_json);
-				} else {
-					printf("Error generating JSON from VR sensors\r\n");
-				}
+				SERIAL_SendCommand("AT+VR", "OK", 50, SERIAL_VrJSONCallback);
 			}
 
-			HAL_Delay(50);
 
 			static uint32_t last_ADC_send = 0;
-			if (HAL_GetTick() - last_ADC_send >= 1000) {
+			if (HAL_GetTick() - last_ADC_send >= 1150) {
 				last_ADC_send = HAL_GetTick();
 
-				char *adc_json = ADC_GenerateJSON();
-
-				if (adc_json != NULL) {
-					//printf("%s\r\n", adc_json);
-					SERIAL_SendCommand(adc_json, "OK", 200, NULL);
-
-					free(adc_json);
-				} else {
-					printf("Error generating JSON from ADCs sensors\r\n");
-				}
+				SERIAL_SendCommand("AT+ADC", "OK", 50, SERIAL_ADCJSONCallback);
 			}
-
-			HAL_Delay(50);
 
 			static uint32_t last_BATTERY_send = 0;
-			if (HAL_GetTick() - last_BATTERY_send >= 1000) {
+			if (HAL_GetTick() - last_BATTERY_send >= 1250) {
 				last_BATTERY_send = HAL_GetTick();
 
-				char *battery_json = BATTERY_GenerateJSON();
-
-				if (battery_json != NULL) {
-					//printf("%s\r\n", battery_json);
-					SERIAL_SendCommand(battery_json, "OK", 200, NULL);
-
-					free(battery_json);
-				} else {
-					printf("Error generating JSON from Battery Manager\r\n");
-				}
+				SERIAL_SendCommand("AT+BATTERY", "OK", 50, SERIAL_BatteryJSONCallback);
 			}
-		//}
+		}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

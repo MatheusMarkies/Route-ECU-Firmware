@@ -6,4 +6,4 @@
 ../Core/Src/engine_control.c:93:6:ENGINE_Injector_Trigger	24	static
 ../Core/Src/engine_control.c:108:6:ENGINE_Injector_StopAll	16	static
 ../Core/Src/engine_control.c:115:6:ENGINE_Injector_OutputCompareCallback	24	static
-../Core/Src/engine_control.c:133:6:ENGINE_Ignition_OutputCompareCallback	16	static
+../Core/Src/engine_control.c:132:6:ENGINE_Ignition_OutputCompareCallback	16	static

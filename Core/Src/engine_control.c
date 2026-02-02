@@ -129,7 +129,6 @@ void ENGINE_Injector_OutputCompareCallback(uint32_t current_time) {
 	}
 }
 
-
 void ENGINE_Ignition_OutputCompareCallback(uint32_t current_time) {
 
 }
