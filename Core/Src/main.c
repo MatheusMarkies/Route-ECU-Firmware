@@ -401,10 +401,9 @@ int main(void)
 
 	//Protocolo de Software Desktop
 	huart_instance = &huart1;
-
-	SERIAL_ResetBuffers();
 	HAL_UART_Receive_IT(&huart1, &PROTOCOL_RX_Stream_Data, 1);
 
+	SERIAL_ResetBuffers();
 	SERIAL_SendCommand("AT", "OK", 1000, SERIAL_CheckConnection);
 
 	//Inicializacão dos ADCs

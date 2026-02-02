@@ -69,6 +69,7 @@ typedef struct {
     uint32_t send_attempt_tick;
     CommandCallback_t callback;
     Command_Result_t result;
+    uint8_t active;
 } Command_Context_t;
 
 // ============================================================================

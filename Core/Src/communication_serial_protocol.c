@@ -36,7 +36,7 @@ void PROTOCOL_RX_Callback(void) {
 	PROTOCOL_RX_Buffer[PROTOCOL_Stream_Index++] = PROTOCOL_RX_Stream_Data;
 
 	last_rx_tick = HAL_GetTick();
-
+	printf("s\r\n");
 	HAL_UART_Receive_IT(huart_instance, &PROTOCOL_RX_Stream_Data, 1);
 }
 
@@ -48,10 +48,19 @@ void SERIAL_ResetBuffers(void) {
 	PROTOCOL_RX_Stream_Data = 0;
 	PROTOCOL_Stream_Index = 0;
 
-	protocol_status = FREE;
+	//protocol_status = FREE;
 
-	free(current_command.cmd);
-	free(current_command.expected_answer);
+    if (current_command.cmd != NULL) {
+        free(current_command.cmd);
+        current_command.cmd = NULL;
+    }
+
+    if (current_command.expected_answer != NULL) {
+        free(current_command.expected_answer);
+        current_command.expected_answer = NULL;
+    }
+
+    current_command.active = 0;
 
 	memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
 }
@@ -88,6 +97,7 @@ void SERIAL_SendCommand(char command[], char answer[], uint32_t timeout, Command
 	current_command.send_attempt_tick = HAL_GetTick();
 	current_command.callback = callback;
 	current_command.result = CMD_RESULT_PENDING;
+	current_command.active = 1;
 
 	HAL_UART_Receive_IT(huart_instance, &PROTOCOL_RX_Stream_Data, 1);
 
@@ -117,7 +127,8 @@ void SERIAL_CheckRXCommand(void) {
 	if (command_state == CMD_STATUS_WAITING) {
 		if (strstr((char*) PROTOCOL_RX_Buffer, "\r")) {
 			last_response_received = (char*) PROTOCOL_RX_Buffer;
-
+			printf(last_response_received);
+			printf("\r\n");
 			last_attempt_tick = 0;
 			command_state = CMD_STATUS_PROCESSING;
 		} else {
@@ -156,18 +167,23 @@ void SERIAL_CheckRXCommand(void) {
 						last_response_received);
 			current_command.result = CMD_RESULT_SUCCESS;
 
-			protocol_status = FREE;
+			SERIAL_ResetBuffers();
 		}
 
-		if (protocol_status == FREE) {
-			if (strstr(last_response_received, "AT") && strlen(last_response_received) <= strlen("AT\r")) {
-				is_connected = 1;
-				SERIAL_DirectTransmit("OK\r");
-			}
-			if (strstr(last_response_received, "AT+WHO") && strlen(last_response_received) <= strlen("AT+WHO\r")) {
-				SERIAL_DirectTransmit("ID:ROUTE_ECU_V1\r");
-			}
-		}
+        if (protocol_status == FREE) {
+            if (strstr(last_response_received, "AT") &&
+                !strstr(last_response_received, "AT+")) {
+                printf("AT comando detectado, respondendo OK\r\n");
+                SERIAL_DirectTransmit("OK\r");
+            }
+
+            else if (strstr(last_response_received, "AT+WHO")) {
+                printf("AT+WHO detectado, respondendo ID\r\n");
+                SERIAL_DirectTransmit("ID:ROUTE_ECU_V1\r");
+            }
+
+            SERIAL_ResetBuffers();
+        }
 
 		command_state = CMD_STATUS_WAITING;
 	}
@@ -184,8 +200,9 @@ void SERIAL_CheckConnection(Command_Result_t result, char *response) {
 }
 
 void SERIAL_DirectTransmit(char *cmd) {
-	SERIAL_ResetBuffers();
-	HAL_UART_Receive_IT(huart_instance, &PROTOCOL_RX_Stream_Data, 1);
-	HAL_UART_Transmit_IT(huart_instance, (uint8_t*) cmd, strlen(cmd));
-	protocol_status = FREE;
+    printf(">> TX direto: %s", cmd);
+    HAL_UART_Transmit_IT(huart_instance, (uint8_t*) cmd, strlen(cmd));
+    if (protocol_status != WAITING) {
+        protocol_status = FREE;
+    }
 }
