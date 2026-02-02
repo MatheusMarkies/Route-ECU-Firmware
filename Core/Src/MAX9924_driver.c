@@ -73,14 +73,19 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type){
     float ratio = (float)delta/(float)temp.period;
 
     if(ratio >= 2.5f){
-    	temp.isSync = true;
+
+    	if(temp.isSync){
+        	temp.pulse_count_per_rev = temp.pulse_count;
+        	temp.revolution_count += 1;
+    	}else
+    		temp.isSync = true;
+
     	temp.pulse_count = 0;
-    	temp.revolution_count += 1;
     }else
-    	temp.frequency_hz = 1.0f/(float)delta;
+    	temp.frequency_hz = 1.0f/(float)delta * 1000000.0f;
 
     temp.last_edge_time = current_time;
-	temp.period = delta;
+	temp.period = delta;//us
 
 	if(type == SENSOR_CKP){
 		ckp_sensor = temp;

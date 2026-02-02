@@ -16,9 +16,9 @@ int PROTOCOL_Stream_Index = 0;
 
 uint16_t last_rx_tick = 0;
 
-PROTOCOLStatus protocol_status = FREE;
+Protocol_Status_t protocol_status = FREE;
 
-UART_HandleTypeDef huart_instance;
+UART_HandleTypeDef *huart_instance;
 
 const uint32_t PROTOCOL_TIMEOUT = 1 * 1000;
 const uint32_t SEND_ATTEMPT_INTERVAL_MS = 500;
@@ -30,89 +30,124 @@ volatile uint32_t last_send_at_timestamp = 0;
 
 volatile uint8_t is_connected = 0;
 
+Command_Context_t current_command = {0};
+
 void PROTOCOL_RX_Callback(void) {
 	PROTOCOL_RX_Buffer[PROTOCOL_Stream_Index++] = PROTOCOL_RX_Stream_Data;
+
 	last_rx_tick = HAL_GetTick();
-	protocol_status = RX;
-	HAL_UART_Receive_IT(&huart_instance, &PROTOCOL_RX_Stream_Data, 1);
+
+	HAL_UART_Receive_IT(huart_instance, &PROTOCOL_RX_Stream_Data, 1);
 }
 
 void PROTOCOL_TX_Callback(void) {
-	if (protocol_status == FREE) {
-		protocol_status = WAITING;
-		send_tick = HAL_GetTick();
-	}
+	protocol_status = WAITING;
 }
 
 void SERIAL_ResetBuffers(void) {
 	PROTOCOL_RX_Stream_Data = 0;
 	PROTOCOL_Stream_Index = 0;
-	memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
-}
-
-uint8_t SERIAL_SendCommand(char command[], char answer[], uint32_t timeout) {
-	uint8_t ATisOK = 0;
-	if(!is_connected)
-	{
-		ATisOK = 0;
-		return ATisOK;
-	}
-
-	send_tick = HAL_GetTick();
-
-	SERIAL_ResetBuffers();
-
-	HAL_UART_Receive_IT(&huart_instance, &PROTOCOL_RX_Stream_Data, 1);
-
-	uint8_t commandBuffer[1024] = { 0 };
-	memcpy(commandBuffer, (uint8_t*) command, strlen(command) + 1);
-
-	uint32_t previousTick = HAL_GetTick();
-	while (!ATisOK && previousTick + timeout > HAL_GetTick()) {
-
-		if (HAL_GetTick() - last_send_at_timestamp >= SEND_AT_INTERVAL_MS) {
-			last_send_at_timestamp = HAL_GetTick();
-
-			if (protocol_status == FREE) {
-				HAL_UART_Transmit_IT(&huart_instance, commandBuffer,
-						sizeof(commandBuffer));
-			}
-
-			if (protocol_status >= WAITING) {
-				if (protocol_status == RX) {
-					if (strstr((char*) PROTOCOL_RX_Buffer, answer)) {
-						ATisOK = 1;
-					}
-				}
-			}
-
-		}
-		//HAL_Delay(50);
-	}
 
 	protocol_status = FREE;
 
-	if (!ATisOK) {
-		printf("\r\n");
-		printf("CMD Timeout... \r\n");
-	}
-	return ATisOK;
+	memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
 }
 
-uint8_t SERIAL_CheckConnection(void){
-	if(SERIAL_SendCommand("AT","OK",1000))
-		is_connected = 1;
-	else{
-		is_connected = 0;
-		return 0;
+void SERIAL_SendCommand(char command[], char answer[], uint32_t timeout, CommandCallback_t callback) {
+	if (huart_instance == NULL) {
+		return;
 	}
-	return 1;
+
+	SERIAL_ResetBuffers();
+
+    snprintf(current_command.cmd, sizeof(current_command.cmd), "%s\r", command);
+    strncpy(current_command.expected_answer, answer, sizeof(current_command.expected_answer) - 1);
+    current_command.timeout = timeout;
+    current_command.start_tick = HAL_GetTick();
+    current_command.send_attempt_tick = HAL_GetTick();
+    current_command.callback = callback;
+    current_command.result = CMD_RESULT_PENDING;
+
+	HAL_UART_Receive_IT(huart_instance, &PROTOCOL_RX_Stream_Data, 1);
+
+    HAL_StatusTypeDef status = HAL_UART_Transmit_IT(
+        huart_instance,
+        (uint8_t*)current_command.cmd,
+        strlen(current_command.cmd)
+    );
+
+    if (status == HAL_OK) {
+        protocol_status = WAITING;
+    } else {
+        protocol_status = FREE;
+
+        if (current_command.callback) {
+            current_command.callback(CMD_RESULT_ERROR, NULL);
+        }
+    }
+}
+
+void SERIAL_CheckRXCommand(void) {
+	static char *last_response_received;
+	static Command_State_t command_state = CMD_STATUS_WAITING;
+	static uint32_t last_attempt_tick = 0;
+
+	if (command_state == CMD_STATUS_WAITING) {
+		if (strstr((char*) PROTOCOL_RX_Buffer, "\r")) {
+			last_response_received = (char*) PROTOCOL_RX_Buffer;
+
+			last_attempt_tick = 0;
+			command_state = CMD_STATUS_PROCESSING;
+		} else {
+			if (protocol_status == WAITING && (HAL_GetTick() - current_command.send_attempt_tick) < current_command.timeout) {
+				if (HAL_GetTick() - last_attempt_tick >= SEND_AT_INTERVAL_MS) {
+					last_attempt_tick = HAL_GetTick();
+
+					HAL_StatusTypeDef status = HAL_UART_Transmit_IT(
+							huart_instance, (uint8_t*) current_command.cmd,
+							strlen(current_command.cmd));
+					if (status == HAL_OK) {
+						protocol_status = WAITING;
+					}else SERIAL_ResetBuffers();
+
+				}
+			} else if ((HAL_GetTick() - current_command.send_attempt_tick) >= current_command.timeout) {
+				last_attempt_tick = 0;
+
+				if (current_command.callback)
+					current_command.callback(CMD_RESULT_TIMEOUT, NULL);
+				current_command.result = CMD_RESULT_TIMEOUT;
+
+				SERIAL_ResetBuffers();
+			}
+		}
+	} else if (command_state == CMD_STATUS_PROCESSING) {
+		if (protocol_status == WAITING && strstr(last_response_received, current_command.expected_answer)) {
+			if (current_command.callback)
+				current_command.callback(CMD_RESULT_SUCCESS, last_response_received);
+			current_command.result = CMD_RESULT_SUCCESS;
+
+			protocol_status = FREE;
+		}
+		command_state = CMD_STATUS_WAITING;
+	}
+
+}
+
+void SERIAL_CheckConnection(Command_Result_t result, char* response) {
+	if (current_command.result == CMD_RESULT_SUCCESS)
+		is_connected = 1;
+	else {
+		is_connected = 0;
+		return;
+	}
 }
 
 void SERIAL_DirectTransmit(char *cmd) {
 	SERIAL_ResetBuffers();
-	HAL_UART_Transmit(&huart_instance, (uint8_t*) cmd, strlen(cmd), 1000);
-	HAL_UART_Receive(&huart_instance, PROTOCOL_RX_Buffer, sizeof(PROTOCOL_RX_Buffer), 1000);
+	HAL_UART_Transmit(huart_instance, (uint8_t*) cmd, strlen(cmd), 1000);
+	HAL_UART_Receive(huart_instance, PROTOCOL_RX_Buffer,
+			sizeof(PROTOCOL_RX_Buffer), 1000);
 
 	protocol_status = FREE;
 }

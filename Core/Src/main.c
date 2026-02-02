@@ -98,6 +98,7 @@ uint32_t frequency = 0;
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Channel == CKP_ACTIVE_CHANNEL) {
 		VR_InputCaptureCallback(SENSOR_CKP);
+		printf("Det.. \r\n");
 	}
 	if (htim->Channel == CMP_ACTIVE_CHANNEL) {
 		VR_InputCaptureCallback(SENSOR_CMP);
@@ -354,14 +355,12 @@ int main(void)
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 
 	//Protocolo de Software Desktop
-	huart_instance = huart1;
+	huart_instance = &huart1;
 
 	SERIAL_ResetBuffers();
-	HAL_UART_Receive_IT(&huart_instance, &PROTOCOL_RX_Stream_Data, 1);
+	HAL_UART_Receive_IT(&huart1, &PROTOCOL_RX_Stream_Data, 1);
 
-	if (SERIAL_CheckConnection()) {
-		printf("Connected to Software!\r\n");
-	}
+	SERIAL_SendCommand("AT", "OK", 1000, SERIAL_CheckConnection);
 
 	//Inicializacão dos ADCs
 	if (AD7998_Init(&hi2c2, 3.3f) != HAL_OK) {
@@ -391,7 +390,9 @@ int main(void)
 			BATTERY_ReadVoltageFiltered();
 		}
 
-		if (is_connected) {
+		//if (is_connected) {
+			SERIAL_CheckRXCommand();
+
 			static uint32_t last_vr_send = 0;
 			if (HAL_GetTick() - last_vr_send >= 1000) {
 				last_vr_send = HAL_GetTick();
@@ -399,13 +400,15 @@ int main(void)
 				char *vr_json = VR_GenerateJSON();
 				if (vr_json != NULL) {
 					//printf("%s", vr_json);
-					SERIAL_SendCommand(vr_json, "OK", 5000);
+					SERIAL_SendCommand(vr_json, "OK", 200, NULL);
 
 					free(vr_json);
 				} else {
 					printf("Error generating JSON from VR sensors\r\n");
 				}
 			}
+
+			HAL_Delay(50);
 
 			static uint32_t last_ADC_send = 0;
 			if (HAL_GetTick() - last_ADC_send >= 1000) {
@@ -415,15 +418,15 @@ int main(void)
 
 				if (adc_json != NULL) {
 					//printf("%s\r\n", adc_json);
-					SERIAL_SendCommand(adc_json, "OK", 200);
+					SERIAL_SendCommand(adc_json, "OK", 200, NULL);
 
 					free(adc_json);
 				} else {
 					printf("Error generating JSON from ADCs sensors\r\n");
 				}
-
-				printf("\r\n");
 			}
+
+			HAL_Delay(50);
 
 			static uint32_t last_BATTERY_send = 0;
 			if (HAL_GetTick() - last_BATTERY_send >= 1000) {
@@ -433,16 +436,14 @@ int main(void)
 
 				if (battery_json != NULL) {
 					//printf("%s\r\n", battery_json);
-					SERIAL_SendCommand(battery_json, "OK", 200);
+					SERIAL_SendCommand(battery_json, "OK", 200, NULL);
 
 					free(battery_json);
 				} else {
 					printf("Error generating JSON from Battery Manager\r\n");
 				}
-
-				printf("\r\n");
 			}
-		}
+		//}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

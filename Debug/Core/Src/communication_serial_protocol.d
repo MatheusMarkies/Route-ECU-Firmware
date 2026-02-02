@@ -1,6 +1,6 @@
 Core/Src/communication_serial_protocol.o: \
  ../Core/Src/communication_serial_protocol.c \
- ../Core/Inc/communication_serial_protocol.h ../Core/Inc/main.h \
+ ../Core/Inc/communication_serial_protocol.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h \
  ../Core/Inc/stm32h7xx_hal_conf.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h \
@@ -36,9 +36,8 @@ Core/Src/communication_serial_protocol.o: \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h \
- ../Core/Inc/main.h
+ ../Core/Inc/main.h ../Core/Inc/main.h
 ../Core/Inc/communication_serial_protocol.h:
-../Core/Inc/main.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h:
 ../Core/Inc/stm32h7xx_hal_conf.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h:
@@ -74,4 +73,5 @@ Core/Src/communication_serial_protocol.o: \
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h:
+../Core/Inc/main.h:
 ../Core/Inc/main.h:
