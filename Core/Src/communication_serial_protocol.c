@@ -50,6 +50,9 @@ void SERIAL_ResetBuffers(void) {
 
 	protocol_status = FREE;
 
+	free(current_command.cmd);
+	free(current_command.expected_answer);
+
 	memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
 }
 
@@ -157,11 +160,11 @@ void SERIAL_CheckRXCommand(void) {
 		}
 
 		if (protocol_status == FREE) {
-			if (strstr(last_response_received, "AT")) {
+			if (strstr(last_response_received, "AT") && strlen(last_response_received) <= strlen("AT\r")) {
 				is_connected = 1;
 				SERIAL_DirectTransmit("OK\r");
 			}
-			if (strstr(last_response_received, "AT+WHO")) {
+			if (strstr(last_response_received, "AT+WHO") && strlen(last_response_received) <= strlen("AT+WHO\r")) {
 				SERIAL_DirectTransmit("ID:ROUTE_ECU_V1\r");
 			}
 		}
