@@ -1,7 +1,7 @@
 ../Core/Src/communication_serial_protocol.c:35:6:PROTOCOL_RX_Callback	8	static
 ../Core/Src/communication_serial_protocol.c:43:6:PROTOCOL_TX_Callback	4	static
 ../Core/Src/communication_serial_protocol.c:47:6:SERIAL_ResetBuffers	8	static
-../Core/Src/communication_serial_protocol.c:68:6:SERIAL_SendCommand	48	static
-../Core/Src/communication_serial_protocol.c:122:6:SERIAL_CheckRXCommand	24	static
-../Core/Src/communication_serial_protocol.c:193:6:SERIAL_CheckConnection	16	static
-../Core/Src/communication_serial_protocol.c:202:6:SERIAL_DirectTransmit	24	static
+../Core/Src/communication_serial_protocol.c:72:6:SERIAL_SendCommand	48	static
+../Core/Src/communication_serial_protocol.c:126:6:SERIAL_CheckRXCommand	24	static
+../Core/Src/communication_serial_protocol.c:197:6:SERIAL_CheckConnection	16	static
+../Core/Src/communication_serial_protocol.c:206:6:SERIAL_DirectTransmit	24	static

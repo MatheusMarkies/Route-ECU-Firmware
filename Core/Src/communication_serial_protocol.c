@@ -62,6 +62,10 @@ void SERIAL_ResetBuffers(void) {
 
     current_command.active = 0;
 
+    if (huart_instance != NULL) {
+        HAL_UART_Receive_IT(huart_instance, &PROTOCOL_RX_Stream_Data, 1);
+    }
+
 	memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
 }
 

@@ -347,6 +347,7 @@ void ADC_Read_Cycle(void) {
 		return;
 	}
 }
+
 /* USER CODE END 0 */
 
 /**
@@ -402,6 +403,8 @@ int main(void)
 	//Protocolo de Software Desktop
 	huart_instance = &huart1;
 	HAL_UART_Receive_IT(&huart1, &PROTOCOL_RX_Stream_Data, 1);
+
+	Test_UART_RX();
 
 	SERIAL_ResetBuffers();
 	SERIAL_SendCommand("AT", "OK", 1000, SERIAL_CheckConnection);
