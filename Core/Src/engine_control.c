@@ -12,6 +12,9 @@
 uint8_t injector_loop_test = 0;
 uint32_t last_injector_loop_tick;
 
+uint8_t ignition_schedule_test = 0;
+static uint32_t last_schedule_test_tick = 0;
+
 uint8_t ignition_loop_test = 0;
 uint32_t last_ignition_loop_tick;
 
@@ -211,8 +214,8 @@ static const uint32_t IGN_IT_FLAGS[4] = {TIM_IT_CC1, TIM_IT_CC2, TIM_IT_CC3, TIM
 static const uint32_t IGN_CLR_FLAGS[4]= {TIM_FLAG_CC1, TIM_FLAG_CC2, TIM_FLAG_CC3, TIM_FLAG_CC4};
 
 void ENGINE_Schedule_Spark(uint8_t cyl_id, uint32_t start_tick, uint16_t dwell_us, uint16_t spark_time_us) {
-	if (dwell_us < 500)
-		dwell_us = 500;
+	if (dwell_us < 2000)
+		dwell_us = 2000;
 	if (dwell_us > 10000)
 		dwell_us = 10000;
 
@@ -235,8 +238,8 @@ void ENGINE_Schedule_Spark(uint8_t cyl_id, uint32_t start_tick, uint16_t dwell_u
 }
 
 void ENGINE_Ignition_FireNow(uint8_t ign, uint16_t dwell_us, uint16_t spark_time_us) {
-	if (dwell_us < 500)
-		dwell_us = 500;
+	if (dwell_us < 2000)
+		dwell_us = 2000;
 	if (dwell_us > 10000)
 		dwell_us = 10000;
 
@@ -263,13 +266,45 @@ void ENGINE_Ignition_TestLoop(void) {
     }
 
     uint32_t current_tick = HAL_GetTick();
-    if ((current_tick - last_ignition_loop_tick) < 2000) {
+    if ((current_tick - last_ignition_loop_tick) < 1000) { //ms
         return;
     }
 
     last_ignition_loop_tick = current_tick;
 
+    printf("[IGN TEST] Ignition! \r\n");
+
     for (int i = 0; i < 4; i++) {
+    	ENGINE_Ignition_FireNow(i, 4000, 0); //us
+    }
+}
+
+void ENGINE_Ignition_ScheduleTestLoop(void) {
+    if (!ignition_schedule_test) {
+        return;
+    }
+
+    uint32_t current_tick = HAL_GetTick();
+
+    if ((current_tick - last_schedule_test_tick) < 500) {
+        return;
+    }
+
+    if (ignition_state[0].state != IGN_STATE_IDLE) {
+        return;
+    }
+
+    last_schedule_test_tick = current_tick;
+
+    printf("[IGN TEST] Scheduling sequence initiated...\r\n");
+
+    uint32_t current_timer_cnt = __HAL_TIM_GET_COUNTER(&htim4);
+    uint32_t delay_into_future_us = 20000;
+
+    uint32_t target_spark_tick = current_timer_cnt + delay_into_future_us;
+
+    for (int i = 0; i < 4; i++) {
+        ENGINE_Schedule_Spark(i, target_spark_tick, 4000, 0);
     }
 }
 

@@ -82,6 +82,10 @@ typedef struct {
 
 extern ENGINE_t engine;
 
+extern uint8_t injector_loop_test;
+extern uint8_t ignition_schedule_test;
+extern uint8_t ignition_loop_test;
+
 #define ANGLE_MAX 720
 
 #define __HAL_TIM_SET_OC_MODE(__HANDLE__, __CHANNEL__, __MODE__) \
@@ -112,6 +116,7 @@ void ENGINE_Injector_StopAll(void);
 void ENGINE_Schedule_Spark(uint8_t cyl_id, uint32_t start_tick, uint16_t dwell_us, uint16_t spark_time_us) ;
 void ENGINE_Ignition_FireNow(uint8_t ign, uint16_t dwell_us, uint16_t spark_time_us) ;
 void ENGINE_Ignition_TestLoop(void);
+void ENGINE_Ignition_ScheduleTestLoop(void);
 void ENGINE_Ignition_StopAll(void);
 
 #endif /* INC_ENGINE_CONTROL_H_ */

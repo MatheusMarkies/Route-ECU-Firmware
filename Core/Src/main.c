@@ -121,7 +121,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 
 		ENGINE_VR_OutputCompareCallback(current_time, ckp_sensor, cmp_sensor);
 
-		uint32_t next_compare = current_time + 100;//100us
+		uint32_t next_compare = current_time + 100; //100us
 		__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, next_compare);
 	}
 
@@ -153,7 +153,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_1, TIM_OCMODE_INACTIVE);
 
 				injector_state[0].state = INJ_STATE_ACTIVE;
-			} else {
+			} else if (injector_state[0].state == INJ_STATE_ACTIVE) {
 				injector_state[0].state = INJ_STATE_IDLE;
 				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC1);
 			}
@@ -167,7 +167,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_2, TIM_OCMODE_INACTIVE);
 
 				injector_state[1].state = INJ_STATE_ACTIVE;
-			} else {
+			} else if (injector_state[1].state == INJ_STATE_ACTIVE) {
 				injector_state[1].state = INJ_STATE_IDLE;
 				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC2);
 			}
@@ -181,7 +181,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_3, TIM_OCMODE_INACTIVE);
 
 				injector_state[2].state = INJ_STATE_ACTIVE;
-			} else {
+			} else if (injector_state[2].state == INJ_STATE_ACTIVE) {
 				injector_state[2].state = INJ_STATE_IDLE;
 				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC3);
 			}
@@ -194,9 +194,8 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4, scheduled_end);
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_4, TIM_OCMODE_INACTIVE);
 
-
 				injector_state[3].state = INJ_STATE_ACTIVE;
-			} else {
+			} else if (injector_state[3].state == INJ_STATE_ACTIVE) {
 				injector_state[3].state = INJ_STATE_IDLE;
 				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC4);
 			}
@@ -207,53 +206,69 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 			if (ignition_state[0].state == IGN_STATE_DWELL) {
 
+				uint32_t spark_time = ignition_state[0].spark_start_time;
+
 				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1,
-						ignition_state[0].spark_time_us);
+						spark_time);
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_1, TIM_OCMODE_INACTIVE);
 
 				ignition_state[0].state = IGN_STATE_SPARK;
 			} else if (ignition_state[0].state == IGN_STATE_SPARK) {
 				ignition_state[0].state = IGN_STATE_IDLE;
 				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC1);
+			} else if (ignition_state[0].state == IGN_STATE_IDLE) {
+
 			}
 		}
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
 			if (ignition_state[1].state == IGN_STATE_DWELL) {
 
+				uint32_t spark_time = ignition_state[0].spark_start_time;
+
 				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2,
-						ignition_state[1].spark_time_us);
+						spark_time);
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_2, TIM_OCMODE_INACTIVE);
 
 				ignition_state[1].state = IGN_STATE_SPARK;
 			} else if (ignition_state[1].state == IGN_STATE_SPARK) {
 				ignition_state[1].state = IGN_STATE_IDLE;
 				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC2);
+			} else if (ignition_state[0].state == IGN_STATE_IDLE) {
+
 			}
 		}
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
 			if (ignition_state[2].state == IGN_STATE_DWELL) {
 
+				uint32_t spark_time = ignition_state[0].spark_start_time;
+
 				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3,
-						ignition_state[2].spark_time_us);
+						spark_time);
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_3, TIM_OCMODE_INACTIVE);
 
 				ignition_state[2].state = IGN_STATE_SPARK;
 			} else if (ignition_state[2].state == IGN_STATE_SPARK) {
 				ignition_state[2].state = IGN_STATE_IDLE;
 				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC3);
+			} else if (ignition_state[0].state == IGN_STATE_IDLE) {
+
 			}
 		}
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
 			if (ignition_state[3].state == IGN_STATE_DWELL) {
 
+				uint32_t spark_time = ignition_state[0].spark_start_time;
+
 				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4,
-						ignition_state[3].spark_time_us);
+						spark_time);
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_4, TIM_OCMODE_INACTIVE);
 
 				ignition_state[3].state = IGN_STATE_SPARK;
 			} else if (ignition_state[3].state == IGN_STATE_SPARK) {
 				ignition_state[3].state = IGN_STATE_IDLE;
 				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC4);
+			} else if (ignition_state[0].state == IGN_STATE_IDLE) {
+
 			}
 		}
 	}
@@ -288,27 +303,38 @@ void I2C_Scanner(I2C_HandleTypeDef *hi2c) {
 
 char* ADC_GenerateJSON(void) {
 	cJSON *root = cJSON_CreateObject();
+	char str_buffer[32];
 
 	if (root == NULL) {
 		return NULL;
 	}
 
+	// --- ADC U16 ---
 	cJSON *adc_u16_array = cJSON_CreateArray();
 	for (int i = 0; i < 8; i++) {
 		cJSON *sensor = cJSON_CreateObject();
 		cJSON_AddStringToObject(sensor, "sensor", AD7998_U16_GetSensorName(i));
+
 		cJSON_AddNumberToObject(sensor, "raw", adc_u16.raw_values[i]);
-		cJSON_AddNumberToObject(sensor, "voltage", adc_u16.voltages[i]);
+
+		snprintf(str_buffer, sizeof(str_buffer), "%.4f", adc_u16.voltages[i]);
+		cJSON_AddRawToObject(sensor, "voltage", str_buffer);
+
 		cJSON_AddItemToArray(adc_u16_array, sensor);
 	}
 	cJSON_AddItemToObject(root, "adc_u16", adc_u16_array);
 
+	// --- ADC U17 ---
 	cJSON *adc_u17_array = cJSON_CreateArray();
 	for (int i = 0; i < 8; i++) {
 		cJSON *sensor = cJSON_CreateObject();
 		cJSON_AddStringToObject(sensor, "sensor", AD7998_U17_GetSensorName(i));
+
 		cJSON_AddNumberToObject(sensor, "raw", adc_u17.raw_values[i]);
-		cJSON_AddNumberToObject(sensor, "voltage", adc_u17.voltages[i]);
+
+		snprintf(str_buffer, sizeof(str_buffer), "%.4f", adc_u17.voltages[i]);
+		cJSON_AddRawToObject(sensor, "voltage", str_buffer);
+
 		cJSON_AddItemToArray(adc_u17_array, sensor);
 	}
 	cJSON_AddItemToObject(root, "adc_u17", adc_u17_array);
@@ -332,6 +358,8 @@ char* ADC_GenerateJSON(void) {
 
 char* VR_GenerateJSON(void) {
 	cJSON *root = cJSON_CreateObject();
+	char str_buffer[32];
+
 	if (root == NULL) {
 		return NULL;
 	}
@@ -343,17 +371,31 @@ char* VR_GenerateJSON(void) {
 		return NULL;
 	}
 
-	cJSON_AddNumberToObject(ckp, "rpm", ckp_sensor.rpm);
-	cJSON_AddNumberToObject(ckp, "freq", ckp_sensor.frequency_hz);
+	// --- CKP Data ---
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", ckp_sensor.rpm);
+	cJSON_AddRawToObject(ckp, "rpm", str_buffer);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", ckp_sensor.frequency_hz);
+	cJSON_AddRawToObject(ckp, "frequence", str_buffer);
+
 	cJSON_AddNumberToObject(ckp, "pulses", ckp_sensor.pulse_count);
 	cJSON_AddNumberToObject(ckp, "revolutions", ckp_sensor.revolution_count);
-	cJSON_AddNumberToObject(ckp, "period", ckp_sensor.period);
 
-	cJSON_AddNumberToObject(cmp, "rpm", cmp_sensor.rpm);
-	cJSON_AddNumberToObject(cmp, "freq", cmp_sensor.frequency_hz);
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)ckp_sensor.period);
+	cJSON_AddRawToObject(ckp, "period", str_buffer);
+
+	// --- CMP Data ---
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", cmp_sensor.rpm);
+	cJSON_AddRawToObject(cmp, "rpm", str_buffer);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", cmp_sensor.frequency_hz);
+	cJSON_AddRawToObject(cmp, "frequence", str_buffer);
+
 	cJSON_AddNumberToObject(cmp, "pulses", cmp_sensor.pulse_count);
 	cJSON_AddNumberToObject(cmp, "revolutions", cmp_sensor.revolution_count);
-	cJSON_AddNumberToObject(cmp, "period", cmp_sensor.period);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)cmp_sensor.period);
+	cJSON_AddRawToObject(cmp, "period", str_buffer);
 
 	cJSON_AddItemToObject(root, "ckp", ckp);
 	cJSON_AddItemToObject(root, "cmp", cmp);
@@ -387,11 +429,66 @@ char* BATTERY_GenerateJSON(void) {
 		return NULL;
 	}
 
-	char str_buffer[16];
-	snprintf(str_buffer, sizeof(str_buffer), "%.3f", battery.voltage);
+	char str_buffer[32];
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", battery.voltage);
 	cJSON_AddRawToObject(battery_object, "voltage", str_buffer);
 
 	cJSON_AddItemToObject(root, "battery", battery_object);
+
+	char *json_string = cJSON_PrintUnformatted(root);
+
+	if (json_string != NULL) {
+		size_t total_len = strlen(json_string) + 1;
+		char *final_string = (char*) malloc(total_len);
+		if (final_string != NULL) {
+			snprintf(final_string, total_len, "%s", json_string);
+		}
+		cJSON_free(json_string);
+		cJSON_Delete(root);
+		return final_string;
+	}
+
+	cJSON_Delete(root);
+	return NULL;
+}
+
+char* ENGINE_GenerateJSON(void) {
+	char str_buffer[32];
+
+	cJSON *root = cJSON_CreateObject();
+	if (root == NULL) {
+		return NULL;
+	}
+
+	cJSON *engine_object = cJSON_CreateObject();
+	if (engine_object == NULL) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+
+	cJSON *crankshaft = cJSON_CreateObject();
+	cJSON *camshaft = cJSON_CreateObject();
+	if (crankshaft == NULL || camshaft == NULL) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)engine.crakshaft_angular_velocity);
+	cJSON_AddRawToObject(crankshaft, "angularvelocity", str_buffer);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)engine.crakshaft_angle);
+	cJSON_AddRawToObject(crankshaft, "angle", str_buffer);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)engine.camshaft_angular_velocity);
+	cJSON_AddRawToObject(crankshaft, "angularvelocity", str_buffer);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)engine.camshaft_angle);
+	cJSON_AddRawToObject(crankshaft, "angle", str_buffer);
+
+	cJSON_AddItemToObject(engine_object, "crankshaft", crankshaft);
+	cJSON_AddItemToObject(engine_object, "camshaft", camshaft);
+
+	cJSON_AddItemToObject(root, "engine", engine_object);
 
 	char *json_string = cJSON_PrintUnformatted(root);
 
@@ -449,6 +546,21 @@ void SERIAL_BatteryJSONCallback(Command_Result_t result, char *response) {
 			free(battery_json);
 		} else {
 			printf("Error generating JSON from Battery Manager\r\n");
+		}
+	} else {
+		return;
+	}
+}
+
+void SERIAL_EngineJSONCallback(Command_Result_t result, char *response) {
+	if (result == CMD_RESULT_SUCCESS) {
+		char *engine_json = ENGINE_GenerateJSON();
+		if (engine_json != NULL) {
+			SERIAL_SendCommand(engine_json, "OK", 200, NULL);
+
+			free(engine_json);
+		} else {
+			printf("Error generating JSON from Engine\r\n");
 		}
 	} else {
 		return;
@@ -535,6 +647,8 @@ int main(void) {
 	} else
 		printf("Error starting VR sensors!\r\n");
 
+	ignition_schedule_test = 1;
+
 	printf("\r\n");
 	/* USER CODE END 2 */
 
@@ -577,7 +691,20 @@ int main(void) {
 				SERIAL_SendCommand("AT+BATTERY", "OK", 50,
 						SERIAL_BatteryJSONCallback);
 			}
+
+			static uint32_t last_ENGINE_send = 0;
+			if (HAL_GetTick() - last_ENGINE_send >= 1450) {
+				last_ENGINE_send = HAL_GetTick();
+
+				SERIAL_SendCommand("AT+ENGINE", "OK", 50,
+						SERIAL_EngineJSONCallback);
+			}
 		}
+
+		ENGINE_Injector_TestLoop();
+		ENGINE_Ignition_TestLoop();
+		ENGINE_Ignition_ScheduleTestLoop();
+
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
