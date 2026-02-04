@@ -51,6 +51,8 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type){
 	uint32_t current_time = 0;
 	VR_Sensor_t temp;
 
+	uint8_t is_largest_tooth = 0;
+
 	if(type == SENSOR_CKP){
 		current_time = HAL_TIM_ReadCapturedValue(&htim5, CKP_CHANNEL);
 		ckp_sensor.current_edge_time = current_time;
@@ -77,10 +79,16 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type){
     	if(temp.isSync){
         	temp.pulse_count_per_rev = temp.pulse_count;
         	temp.revolution_count += 1;
+
+        	is_largest_tooth = 1;
     	}else
     		temp.isSync = true;
 
-    	temp.pulse_count = 0;
+    	if(temp.is_first_rev = 0){
+    		temp.pulse_count = 0;
+    		temp.is_first_rev = 1;
+    	}else temp.is_first_rev = 0;
+
     }else
     	temp.frequency_hz = 1.0f/(float)delta * 1000000.0f;
 
@@ -90,9 +98,16 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type){
 	if(type == SENSOR_CKP){
 		ckp_sensor = temp;
 		ckp_sensor.pulse_count+=1;
+
+		if(is_largest_tooth)
+			ENGINE_CKP_Callback(ckp_sensor);
+
 	}else{
 		cmp_sensor = temp;
 		cmp_sensor.pulse_count+=1;
+
+		if(is_largest_tooth)
+			ENGINE_CMP_Callback(cmp_sensor);
 	}
 }
 

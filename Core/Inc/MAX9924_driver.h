@@ -44,6 +44,7 @@ typedef struct {
     uint32_t pulse_count;           // Contador total de pulsos
     uint32_t pulse_count_per_rev;   // Pulsos por revolução (configurável)
     uint32_t revolution_count;      // Contador de revoluções
+    uint8_t is_first_rev;
 
     // Timing
     uint32_t last_edge_time;        // Timestamp da última borda (ms)
