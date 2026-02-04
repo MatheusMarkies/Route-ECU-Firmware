@@ -19,9 +19,6 @@ static HAL_StatusTypeDef AD7998_WritePointer(AD7998_Device_t *dev, uint8_t reg_a
                                    &reg_addr, 1, I2C_TIMEOUT_MS);
 }
 
-/**
- * @brief Lê um canal específico do ADC (Mode 2 - Command Mode)
- */
 static HAL_StatusTypeDef AD7998_ReadChannel(AD7998_Device_t *dev, uint8_t channel,
                                             uint16_t *raw_value, float *voltage) {
     HAL_StatusTypeDef status;
@@ -55,9 +52,6 @@ static HAL_StatusTypeDef AD7998_ReadChannel(AD7998_Device_t *dev, uint8_t channe
     return HAL_OK;
 }
 
-/**
- * @brief Configura o ADC para conversão sequencial de todos os canais
- */
 static HAL_StatusTypeDef AD7998_ConfigureAllChannels(AD7998_Device_t *dev) {
     HAL_StatusTypeDef status;
     uint8_t config_data[3];
@@ -75,10 +69,6 @@ static HAL_StatusTypeDef AD7998_ConfigureAllChannels(AD7998_Device_t *dev) {
                                      config_data, 3, I2C_TIMEOUT_MS);
     return status;
 }
-
-// ============================================================================
-// FUNÇÕES PÚBLICAS
-// ============================================================================
 
 HAL_StatusTypeDef AD7998_Init(I2C_HandleTypeDef *hi2c2, float vref) {
     HAL_StatusTypeDef status;
@@ -156,7 +146,7 @@ HAL_StatusTypeDef AD7998_U16_ReadAllChannels(void) {
     for (uint8_t ch = 0; ch < 8; ch++) {
         status = AD7998_ReadChannel(&adc_u16, ch, NULL, NULL);
         if (status != HAL_OK) return status;
-        HAL_Delay(1); // Pequeno delay entre leituras
+        HAL_Delay(1);
     }
 
     return HAL_OK;

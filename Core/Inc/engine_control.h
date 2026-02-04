@@ -82,6 +82,7 @@ typedef struct {
 
 extern ENGINE_t engine;
 
+extern uint8_t injector_schedule_test;
 extern uint8_t injector_loop_test;
 extern uint8_t ignition_schedule_test;
 extern uint8_t ignition_loop_test;
@@ -101,6 +102,12 @@ do { \
     } \
 } while(0)
 
+float ENGINE_CalculateAngle(uint32_t current, VR_Sensor_t sensor);
+const char* ENGINE_GetPhaseName(PistonPhase_e phase);
+
+void ENGINE_UpdateCylinderPhases(float global_angle);
+void ENGINE_ScheduleNextPhase(uint32_t current_time_base);
+
 void ENGINE_CKP_Callback(VR_Sensor_t ckp_sensor);
 void ENGINE_CMP_Callback(VR_Sensor_t ckp_sensor);
 
@@ -111,6 +118,7 @@ void ENGINE_Ignition_OutputCompareCallback(uint32_t current_time);
 void ENGINE_Schedule_Injection(uint8_t cyl_id, uint16_t start_tick, uint16_t pulse_us);
 void ENGINE_Injector_FireNow(uint8_t inj, uint16_t pulse_us);
 void ENGINE_Injector_TestLoop(void);
+void ENGINE_Injector_ScheduleTestLoop(void);
 void ENGINE_Injector_StopAll(void);
 
 void ENGINE_Schedule_Spark(uint8_t cyl_id, uint32_t start_tick, uint16_t dwell_us, uint16_t spark_time_us) ;

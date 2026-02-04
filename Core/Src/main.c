@@ -125,6 +125,15 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 		__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, next_compare);
 	}
 
+	if (htim->Instance == TIM5 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
+		uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
+
+		engine.crakshaft_angle = (uint32_t) ENGINE_CalculateAngle(current_time,
+				ckp_sensor);
+		ENGINE_UpdateCylinderPhases((float) engine.crakshaft_angle);
+		ENGINE_ScheduleNextPhase(current_time);
+	}
+
 	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_5) {
 		uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
 
@@ -208,8 +217,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 
 				uint32_t spark_time = ignition_state[0].spark_start_time;
 
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1,
-						spark_time);
+				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, spark_time);
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_1, TIM_OCMODE_INACTIVE);
 
 				ignition_state[0].state = IGN_STATE_SPARK;
@@ -225,8 +233,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 
 				uint32_t spark_time = ignition_state[0].spark_start_time;
 
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2,
-						spark_time);
+				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, spark_time);
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_2, TIM_OCMODE_INACTIVE);
 
 				ignition_state[1].state = IGN_STATE_SPARK;
@@ -242,8 +249,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 
 				uint32_t spark_time = ignition_state[0].spark_start_time;
 
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3,
-						spark_time);
+				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3, spark_time);
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_3, TIM_OCMODE_INACTIVE);
 
 				ignition_state[2].state = IGN_STATE_SPARK;
@@ -259,8 +265,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 
 				uint32_t spark_time = ignition_state[0].spark_start_time;
 
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4,
-						spark_time);
+				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4, spark_time);
 				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_4, TIM_OCMODE_INACTIVE);
 
 				ignition_state[3].state = IGN_STATE_SPARK;
@@ -381,7 +386,7 @@ char* VR_GenerateJSON(void) {
 	cJSON_AddNumberToObject(ckp, "pulses", ckp_sensor.pulse_count);
 	cJSON_AddNumberToObject(ckp, "revolutions", ckp_sensor.revolution_count);
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)ckp_sensor.period);
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float) ckp_sensor.period);
 	cJSON_AddRawToObject(ckp, "period", str_buffer);
 
 	// --- CMP Data ---
@@ -394,7 +399,7 @@ char* VR_GenerateJSON(void) {
 	cJSON_AddNumberToObject(cmp, "pulses", cmp_sensor.pulse_count);
 	cJSON_AddNumberToObject(cmp, "revolutions", cmp_sensor.revolution_count);
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)cmp_sensor.period);
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float) cmp_sensor.period);
 	cJSON_AddRawToObject(cmp, "period", str_buffer);
 
 	cJSON_AddItemToObject(root, "ckp", ckp);
@@ -473,20 +478,33 @@ char* ENGINE_GenerateJSON(void) {
 		return NULL;
 	}
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)engine.crakshaft_angular_velocity);
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
+			(float) engine.crakshaft_angular_velocity);
 	cJSON_AddRawToObject(crankshaft, "angularvelocity", str_buffer);
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)engine.crakshaft_angle);
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
+			(float) engine.crakshaft_angle);
 	cJSON_AddRawToObject(crankshaft, "angle", str_buffer);
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)engine.camshaft_angular_velocity);
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
+			(float) engine.camshaft_angular_velocity);
 	cJSON_AddRawToObject(crankshaft, "angularvelocity", str_buffer);
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)engine.camshaft_angle);
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
+			(float) engine.camshaft_angle);
 	cJSON_AddRawToObject(crankshaft, "angle", str_buffer);
 
 	cJSON_AddItemToObject(engine_object, "crankshaft", crankshaft);
 	cJSON_AddItemToObject(engine_object, "camshaft", camshaft);
+
+	cJSON_AddRawToObject(engine_object, "piston_one",
+			ENGINE_GetPhaseName(engine.cyl_status[0].current_phase));
+	cJSON_AddRawToObject(engine_object, "piston_two",
+			ENGINE_GetPhaseName(engine.cyl_status[1].current_phase));
+	cJSON_AddRawToObject(engine_object, "piston_three",
+			ENGINE_GetPhaseName(engine.cyl_status[2].current_phase));
+	cJSON_AddRawToObject(engine_object, "piston_four",
+			ENGINE_GetPhaseName(engine.cyl_status[3].current_phase));
 
 	cJSON_AddItemToObject(root, "engine", engine_object);
 
@@ -507,63 +525,31 @@ char* ENGINE_GenerateJSON(void) {
 	return NULL;
 }
 
-void SERIAL_VrJSONCallback(Command_Result_t result, char *response) {
+void SEND_VR_CallBack(Command_Result_t result) {
 	if (result == CMD_RESULT_SUCCESS) {
-		char *vr_json = VR_GenerateJSON();
-		if (vr_json != NULL) {
-			SERIAL_SendCommand(vr_json, "OK", 200, NULL);
-
-			free(vr_json);
-		} else {
-			printf("Error generating JSON from VR sensors\r\n");
-		}
-	} else {
-		return;
+		SERIAL_SendJSON(VR_GenerateJSON(), "OK", 150,
+		NULL);
 	}
 }
 
-void SERIAL_ADCJSONCallback(Command_Result_t result, char *response) {
+void SEND_ADC_CallBack(Command_Result_t result) {
 	if (result == CMD_RESULT_SUCCESS) {
-		char *adc_json = ADC_GenerateJSON();
-		if (adc_json != NULL) {
-			SERIAL_SendCommand(adc_json, "OK", 200, NULL);
-
-			free(adc_json);
-		} else {
-			printf("Error generating JSON from ADCs sensors\r\n");
-		}
-	} else {
-		return;
+		SERIAL_SendJSON(ADC_GenerateJSON(), "OK", 150,
+		NULL);
 	}
 }
 
-void SERIAL_BatteryJSONCallback(Command_Result_t result, char *response) {
+void SEND_Battery_CallBack(Command_Result_t result) {
 	if (result == CMD_RESULT_SUCCESS) {
-		char *battery_json = BATTERY_GenerateJSON();
-		if (battery_json != NULL) {
-			SERIAL_SendCommand(battery_json, "OK", 200, NULL);
-
-			free(battery_json);
-		} else {
-			printf("Error generating JSON from Battery Manager\r\n");
-		}
-	} else {
-		return;
+		SERIAL_SendJSON(BATTERY_GenerateJSON(), "OK", 150,
+		NULL);
 	}
 }
 
-void SERIAL_EngineJSONCallback(Command_Result_t result, char *response) {
+void SEND_Engine_CallBack(Command_Result_t result) {
 	if (result == CMD_RESULT_SUCCESS) {
-		char *engine_json = ENGINE_GenerateJSON();
-		if (engine_json != NULL) {
-			SERIAL_SendCommand(engine_json, "OK", 200, NULL);
-
-			free(engine_json);
-		} else {
-			printf("Error generating JSON from Engine\r\n");
-		}
-	} else {
-		return;
+		SERIAL_SendJSON(ENGINE_GenerateJSON(), "OK", 150,
+		NULL);
 	}
 }
 
@@ -631,11 +617,9 @@ int main(void) {
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 
 	//Protocolo de Software Desktop
-	huart_instance = &huart1;
-	HAL_UART_Receive_IT(&huart1, &PROTOCOL_RX_Stream_Data, 1);
+	SERIAL_Init(&huart1);
 
-	SERIAL_ResetBuffers();
-	SERIAL_SendCommand("AT", "OK", 1000, SERIAL_CheckConnection);
+	ENGINE_UpdateCylinderPhases(0);
 
 	//Inicializacão dos ADCs
 	if (AD7998_Init(&hi2c2, 3.3f) != HAL_OK) {
@@ -646,8 +630,6 @@ int main(void) {
 		printf("VR sensors successfully initialized!\r\n");
 	} else
 		printf("Error starting VR sensors!\r\n");
-
-	ignition_schedule_test = 1;
 
 	printf("\r\n");
 	/* USER CODE END 2 */
@@ -667,42 +649,57 @@ int main(void) {
 			BATTERY_ReadVoltageFiltered();
 		}
 
+		SERIAL_ProcessQueue();
 		SERIAL_CheckRXCommand();
 
-		if (is_connected) {
-			static uint32_t last_vr_send = 0;
-			if (HAL_GetTick() - last_vr_send >= 1000) {
-				last_vr_send = HAL_GetTick();
+		static uint32_t last_telemetry_tick = 0;
+		if ((HAL_GetTick() - last_telemetry_tick) >= 500) {
+			last_telemetry_tick = HAL_GetTick();
 
-				SERIAL_SendCommand("AT+VR", "OK", 50, SERIAL_VrJSONCallback);
-			}
+			if (is_connected) {
 
-			static uint32_t last_ADC_send = 0;
-			if (HAL_GetTick() - last_ADC_send >= 1150) {
-				last_ADC_send = HAL_GetTick();
+				static uint8_t telemetry_step = 0;
 
-				SERIAL_SendCommand("AT+ADC", "OK", 50, SERIAL_ADCJSONCallback);
-			}
+				if (!SERIAL_IsQueueFull()) {
 
-			static uint32_t last_BATTERY_send = 0;
-			if (HAL_GetTick() - last_BATTERY_send >= 1250) {
-				last_BATTERY_send = HAL_GetTick();
+					last_telemetry_tick = HAL_GetTick();
 
-				SERIAL_SendCommand("AT+BATTERY", "OK", 50,
-						SERIAL_BatteryJSONCallback);
-			}
+					switch (telemetry_step) {
+					case 0:
+						SERIAL_SendCommand("AT+VR", "OK", 50, SEND_VR_CallBack);
+						telemetry_step++;
+						break;
 
-			static uint32_t last_ENGINE_send = 0;
-			if (HAL_GetTick() - last_ENGINE_send >= 1450) {
-				last_ENGINE_send = HAL_GetTick();
+					case 1:
+						SERIAL_SendCommand("AT+ADC", "OK", 50,
+								SEND_ADC_CallBack);
+						telemetry_step++;
+						break;
 
-				SERIAL_SendCommand("AT+ENGINE", "OK", 50,
-						SERIAL_EngineJSONCallback);
+					case 2:
+						SERIAL_SendCommand("AT+BATTERY", "OK", 50,
+								SEND_Battery_CallBack);
+						telemetry_step++;
+						break;
+
+					case 3:
+						SERIAL_SendCommand("AT+ENGINE", "OK", 50,
+								SEND_Engine_CallBack);
+						telemetry_step = 0;
+						break;
+					}
+				}
+			} else {
+				printf("Try Connect to Workbench... \r\n");
+				SERIAL_SendCommand("AT", "OK", 50,
+						SERIAL_CheckConnection);
 			}
 		}
 
 		ENGINE_Injector_TestLoop();
 		ENGINE_Ignition_TestLoop();
+
+		ENGINE_Injector_ScheduleTestLoop();
 		ENGINE_Ignition_ScheduleTestLoop();
 
 		/* USER CODE END WHILE */
@@ -1138,6 +1135,9 @@ static void MX_TIM5_Init(void) {
 	if (HAL_TIM_OC_ConfigChannel(&htim5, &sConfigOC, TIM_CHANNEL_3) != HAL_OK) {
 		Error_Handler();
 	}
+	if (HAL_TIM_OC_ConfigChannel(&htim5, &sConfigOC, TIM_CHANNEL_4) != HAL_OK) {
+		Error_Handler();
+	}
 	/* USER CODE BEGIN TIM5_Init 2 */
 
 	/* USER CODE END TIM5_Init 2 */
@@ -1301,6 +1301,8 @@ void TIM5_Init_Config(void) {
 	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_3,
 			__HAL_TIM_GET_COUNTER(&htim5) + 10); //__HAL_TIM_GET_COUNTER(&htim5) + 10 a cada 10 ticks
 	HAL_TIM_OC_Start_IT(&htim5, TIM_CHANNEL_3);
+
+	HAL_TIM_OC_Start_IT(&htim5, TIM_CHANNEL_4);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {

@@ -84,7 +84,7 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type){
     	}else
     		temp.isSync = true;
 
-    	if(temp.is_first_rev = 0){
+    	if(temp.is_first_rev == 0){
     		temp.pulse_count = 0;
     		temp.is_first_rev = 1;
     	}else temp.is_first_rev = 0;
@@ -99,14 +99,14 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type){
 		ckp_sensor = temp;
 		ckp_sensor.pulse_count+=1;
 
-		if(is_largest_tooth)
+		if(is_largest_tooth && ckp_sensor.is_first_rev == 0)
 			ENGINE_CKP_Callback(ckp_sensor);
 
 	}else{
 		cmp_sensor = temp;
 		cmp_sensor.pulse_count+=1;
 
-		if(is_largest_tooth)
+		if(is_largest_tooth && cmp_sensor.is_first_rev == 0)
 			ENGINE_CMP_Callback(cmp_sensor);
 	}
 }

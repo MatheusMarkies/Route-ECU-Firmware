@@ -1,4 +1,4 @@
 ../Core/Src/MAX9924_driver.c:18:19:VR_Init	1
 ../Core/Src/MAX9924_driver.c:41:17:VR_CalculateDeltaT	2
-../Core/Src/MAX9924_driver.c:50:6:VR_InputCaptureCallback	8
+../Core/Src/MAX9924_driver.c:50:6:VR_InputCaptureCallback	11
 ../Core/Src/MAX9924_driver.c:117:13:VR_GetSensorName	3
