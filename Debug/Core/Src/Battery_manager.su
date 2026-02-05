@@ -1,3 +1,6 @@
-../Core/Src/Battery_manager.c:13:10:BATTERY_ReadRaw	40	static
-../Core/Src/Battery_manager.c:36:7:BATTERY_ReadVoltage	24	static
-../Core/Src/Battery_manager.c:45:6:BATTERY_ReadVoltageFiltered	32	static
+../Core/Src/Battery_manager.c:16:6:BATTERY_Init	8	static
+../Core/Src/Battery_manager.c:23:10:BATTERY_ReadRaw	40	static
+../Core/Src/Battery_manager.c:49:7:BATTERY_ReadVoltage	24	static
+../Core/Src/Battery_manager.c:86:6:BATTERY_ReadVoltageFiltered	24	static
+../Core/Src/Battery_manager.c:121:6:BATTERY_Calibrate	16	static
+../Core/Src/Battery_manager.c:133:6:BATTERY_Calibrate_LV	40	static

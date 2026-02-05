@@ -61,7 +61,7 @@ main-build: ECU_Formula.elf secondary-outputs
 
 # Tool invocations
 ECU_Formula.elf ECU_Formula.map: $(OBJS) $(USER_OBJS) D:\Route-ECU-Firmware\STM32H743VITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "ECU_Formula.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\Route-ECU-Firmware\STM32H743VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ECU_Formula.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "ECU_Formula.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"D:\Route-ECU-Firmware\STM32H743VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ECU_Formula.map" -Wl,--gc-sections -static -u _printf_float -u _scanf_float --specs=nano.specs -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
