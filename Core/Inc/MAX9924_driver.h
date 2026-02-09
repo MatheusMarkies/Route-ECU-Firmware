@@ -14,6 +14,8 @@
 
 //Resolucao dos Input Captures usando o pre escaler de 124 e HCLK de 125MHz: CK_CNT = HCLK / (PSC+1) = 1000000 Hz ~ 0.001ms
 
+#define LARGEST_RATIO 1000000
+
 // Tipo de sensor VR
 typedef enum {
     SENSOR_CKP = 0,
@@ -51,10 +53,12 @@ typedef struct {
     uint32_t current_edge_time;        // Timestamp da última borda (ms)
     uint32_t pulse_width;           // Largura do último pulso (ms)
     uint32_t period;                // Período entre pulsos (ms)
+    uint32_t last_period;                // Período entre pulsos (ms)
 
     // RPM e velocidade
     float rpm;                      // Rotações por minuto calculadas
     float frequency_hz;             // Frequência em Hz
+    float filtered_delta_us;
 
     uint16_t tooths;
 
@@ -73,7 +77,7 @@ extern TIM_HandleTypeDef htim5;
 #define CKP_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_1
 #define CMP_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_2
 
-HAL_StatusTypeDef VR_Init(uint32_t ckp_pulses_per_rev, uint32_t cmp_pulses_per_rev, uint32_t timeout_ms);
+HAL_StatusTypeDef VR_Init(uint32_t ckp_pulses_per_rev, uint32_t ckp_tooths, uint32_t cmp_pulses_per_rev, uint32_t cmp_tooths, uint32_t timeout_ms);
 
 /**
  * @brief Executa a detecção de pulsos do CKP ou CMP

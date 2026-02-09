@@ -399,7 +399,7 @@ void PROTOCOL_TX_Callback(void) {
 	}
 }
 
-void SERIAL_CheckConnection(Command_Result_t result) {
+void SERIAL_CheckConnection(Command_Result_t result, char *answer) {
 	if (result == CMD_RESULT_SUCCESS) {
 		is_connected = 1;
 	} else {

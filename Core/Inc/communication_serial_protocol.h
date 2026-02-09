@@ -13,12 +13,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CMD_QUEUE_SIZE 10
-#define MAX_CMD_LENGTH 1024
+#define CMD_QUEUE_SIZE 12
+#define MAX_CMD_LENGTH 1536
 #define MAX_ANSWER_LENGTH 64
-#define PROTOCOL_RX_BUFFER_SIZE 2048
+#define PROTOCOL_RX_BUFFER_SIZE 3072
 
-#define DEBUG_SERIAL_PROTOCOL
+//#define DEBUG_SERIAL_PROTOCOL
 
 extern const uint32_t PROTOCOL_TIMEOUT;
 extern const uint32_t SEND_ATTEMPT_INTERVAL_MS;
@@ -98,7 +98,7 @@ void SERIAL_DirectTransmit(char *cmd);
 
 void SERIAL_ProcessQueue(void);
 void SERIAL_CheckRXCommand(void);
-void SERIAL_CheckConnection(Command_Result_t result);
+void SERIAL_CheckConnection(Command_Result_t result, char *answer);
 
 void SERIAL_ResetBuffers(void);
 

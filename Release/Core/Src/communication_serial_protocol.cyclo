@@ -4,7 +4,7 @@
 ../Core/Src/communication_serial_protocol.c:99:9:SERIAL_GetQueueCount	1
 ../Core/Src/communication_serial_protocol.c:103:6:SERIAL_ClearQueue	1
 ../Core/Src/communication_serial_protocol.c:177:6:SERIAL_SendCommand	4
-../Core/Src/communication_serial_protocol.c:196:6:SERIAL_SendJSON	11
+../Core/Src/communication_serial_protocol.c:196:6:SERIAL_SendJSON	8
 ../Core/Src/communication_serial_protocol.c:266:6:SERIAL_DirectTransmit	3
 ../Core/Src/communication_serial_protocol.c:367:6:SERIAL_ResetBuffers	2
 ../Core/Src/communication_serial_protocol.c:143:6:SERIAL_ProcessQueue	5

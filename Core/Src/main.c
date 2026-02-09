@@ -72,6 +72,8 @@ TIM_HandleTypeDef htim5;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
 
@@ -79,8 +81,10 @@ UART_HandleTypeDef huart3;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
@@ -91,10 +95,10 @@ static void MX_TIM1_Init(void);
 static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 void I2C_Scanner(I2C_HandleTypeDef *hi2c);
-void SEND_VR_CallBack(Command_Result_t result);
-void SEND_ADC_CallBack(Command_Result_t result);
-void SEND_Battery_CallBack(Command_Result_t result);
-void SEND_Engine_CallBack(Command_Result_t result);
+void SEND_VR_CallBack(Command_Result_t result, char *answer);
+void SEND_ADC_CallBack(Command_Result_t result, char *answer);
+void SEND_Battery_CallBack(Command_Result_t result, char *answer);
+void SEND_Engine_CallBack(Command_Result_t result, char *answer);
 void ADC_Read_Cycle(void);
 
 void ENGINE_INJECTOR_SCHEDULE_TEST_TOGGLE(void);
@@ -122,165 +126,19 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM5 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-		uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
 
-		ENGINE_VR_OutputCompareCallback(current_time, ckp_sensor, cmp_sensor);
-
-		uint32_t next_compare = current_time + 100; //100us
-		__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, next_compare);
 	}
 
 	if (htim->Instance == TIM5 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
-		uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
-
-		engine.crakshaft_angle = (uint32_t) ENGINE_CalculateAngle(current_time,
-				ckp_sensor);
-		ENGINE_UpdateCylinderPhases((float) engine.crakshaft_angle);
-		ENGINE_ScheduleNextPhase(current_time);
-	}
-
-	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_5) {
-		uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
-
-		ENGINE_Injector_OutputCompareCallback(current_time);
-
-		uint32_t next_compare = current_time + 100;
-		__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_5, next_compare);
-	}
-
-	if (htim->Instance == TIM1 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_6) {
-		uint32_t current_time = __HAL_TIM_GET_COUNTER(htim);
-
-		ENGINE_Ignition_OutputCompareCallback(current_time);
-
-		uint32_t next_compare = current_time + 100;
-		__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_6, next_compare);
+		ENGINE_PhaseOCCallback();
 	}
 
 	if (htim->Instance == TIM1) {
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-			if (injector_state[0].state == INJ_STATE_SCHEDULED) {
-				uint32_t scheduled_end = injector_state[0].pulse_start_time
-						+ injector_state[0].pulse_width_us;
-
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, scheduled_end);
-				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_1, TIM_OCMODE_INACTIVE);
-
-				injector_state[0].state = INJ_STATE_ACTIVE;
-			} else if (injector_state[0].state == INJ_STATE_ACTIVE) {
-				injector_state[0].state = INJ_STATE_IDLE;
-				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC1);
-			}
-		}
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-			if (injector_state[1].state == INJ_STATE_SCHEDULED) {
-				uint32_t scheduled_end = injector_state[1].pulse_start_time
-						+ injector_state[1].pulse_width_us;
-
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, scheduled_end);
-				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_2, TIM_OCMODE_INACTIVE);
-
-				injector_state[1].state = INJ_STATE_ACTIVE;
-			} else if (injector_state[1].state == INJ_STATE_ACTIVE) {
-				injector_state[1].state = INJ_STATE_IDLE;
-				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC2);
-			}
-		}
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-			if (injector_state[2].state == INJ_STATE_SCHEDULED) {
-				uint32_t scheduled_end = injector_state[2].pulse_start_time
-						+ injector_state[2].pulse_width_us;
-
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3, scheduled_end);
-				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_3, TIM_OCMODE_INACTIVE);
-
-				injector_state[2].state = INJ_STATE_ACTIVE;
-			} else if (injector_state[2].state == INJ_STATE_ACTIVE) {
-				injector_state[2].state = INJ_STATE_IDLE;
-				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC3);
-			}
-		}
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
-			if (injector_state[3].state == INJ_STATE_SCHEDULED) {
-				uint32_t scheduled_end = injector_state[3].pulse_start_time
-						+ injector_state[3].pulse_width_us;
-
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4, scheduled_end);
-				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_4, TIM_OCMODE_INACTIVE);
-
-				injector_state[3].state = INJ_STATE_ACTIVE;
-			} else if (injector_state[3].state == INJ_STATE_ACTIVE) {
-				injector_state[3].state = INJ_STATE_IDLE;
-				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC4);
-			}
-		}
+		ENGINE_Injector_OutputCompareCallback(htim);
 	}
 
 	if (htim->Instance == TIM4) {
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-			if (ignition_state[0].state == IGN_STATE_DWELL) {
-
-				uint32_t spark_time = ignition_state[0].spark_start_time;
-
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_1, spark_time);
-				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_1, TIM_OCMODE_INACTIVE);
-
-				ignition_state[0].state = IGN_STATE_SPARK;
-			} else if (ignition_state[0].state == IGN_STATE_SPARK) {
-				ignition_state[0].state = IGN_STATE_IDLE;
-				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC1);
-			} else if (ignition_state[0].state == IGN_STATE_IDLE) {
-
-			}
-		}
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2) {
-			if (ignition_state[1].state == IGN_STATE_DWELL) {
-
-				uint32_t spark_time = ignition_state[0].spark_start_time;
-
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, spark_time);
-				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_2, TIM_OCMODE_INACTIVE);
-
-				ignition_state[1].state = IGN_STATE_SPARK;
-			} else if (ignition_state[1].state == IGN_STATE_SPARK) {
-				ignition_state[1].state = IGN_STATE_IDLE;
-				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC2);
-			} else if (ignition_state[0].state == IGN_STATE_IDLE) {
-
-			}
-		}
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3) {
-			if (ignition_state[2].state == IGN_STATE_DWELL) {
-
-				uint32_t spark_time = ignition_state[0].spark_start_time;
-
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3, spark_time);
-				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_3, TIM_OCMODE_INACTIVE);
-
-				ignition_state[2].state = IGN_STATE_SPARK;
-			} else if (ignition_state[2].state == IGN_STATE_SPARK) {
-				ignition_state[2].state = IGN_STATE_IDLE;
-				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC3);
-			} else if (ignition_state[0].state == IGN_STATE_IDLE) {
-
-			}
-		}
-		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4) {
-			if (ignition_state[3].state == IGN_STATE_DWELL) {
-
-				uint32_t spark_time = ignition_state[0].spark_start_time;
-
-				__HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4, spark_time);
-				__HAL_TIM_SET_OC_MODE(htim, TIM_CHANNEL_4, TIM_OCMODE_INACTIVE);
-
-				ignition_state[3].state = IGN_STATE_SPARK;
-			} else if (ignition_state[3].state == IGN_STATE_SPARK) {
-				ignition_state[3].state = IGN_STATE_IDLE;
-				__HAL_TIM_DISABLE_IT(htim, TIM_IT_CC4);
-			} else if (ignition_state[0].state == IGN_STATE_IDLE) {
-
-			}
-		}
+		ENGINE_Ignition_OutputCompareCallback(htim);
 	}
 }
 
@@ -446,7 +304,6 @@ static char* BATTERY_GenerateJSON(void) {
 
 	cJSON_AddNumberToObject(battery_object, "raw_adc", battery.raw_adc);
 
-
 	snprintf(str_buffer, sizeof(str_buffer), "%.4f", battery.linear_cte);
 	cJSON_AddRawToObject(battery_object, "linear_cte", str_buffer);
 
@@ -456,7 +313,8 @@ static char* BATTERY_GenerateJSON(void) {
 		return NULL;
 	}
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)battery.lvL.voltage);
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
+			(float) battery.lvL.voltage);
 	cJSON_AddRawToObject(lvL_object, "voltage", str_buffer);
 
 	cJSON_AddNumberToObject(lvL_object, "raw_adc", battery.lvL.raw_adc);
@@ -469,7 +327,8 @@ static char* BATTERY_GenerateJSON(void) {
 		return NULL;
 	}
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float)battery.lvH.voltage);
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
+			(float) battery.lvH.voltage);
 	cJSON_AddRawToObject(lvH_object, "voltage", str_buffer);
 
 	cJSON_AddNumberToObject(lvH_object, "raw_adc", battery.lvH.raw_adc);
@@ -517,11 +376,15 @@ static char* ENGINE_GenerateJSON(void) {
 	}
 
 	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
-			(float) engine.crakshaft_angular_velocity);
+			(float) engine.crankshaft_angular_velocity);
 	cJSON_AddRawToObject(crankshaft, "angularvelocity", str_buffer);
 
 	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
-			(float) engine.crakshaft_angle);
+			(float) engine.crankshaft_angular_acc);
+	cJSON_AddRawToObject(crankshaft, "angularacc", str_buffer);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.6f",
+			(float) engine.crankshaft_angle);
 	cJSON_AddRawToObject(crankshaft, "angle", str_buffer);
 
 	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
@@ -529,6 +392,10 @@ static char* ENGINE_GenerateJSON(void) {
 	cJSON_AddRawToObject(camshaft, "angularvelocity", str_buffer);
 
 	snprintf(str_buffer, sizeof(str_buffer), "%.4f",
+			(float) engine.camshaft_angular_acc);
+	cJSON_AddRawToObject(camshaft, "angularacc", str_buffer);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.6f",
 			(float) engine.camshaft_angle);
 	cJSON_AddRawToObject(camshaft, "angle", str_buffer);
 
@@ -562,8 +429,61 @@ static char* ENGINE_GenerateJSON(void) {
 	cJSON_Delete(root);
 	return NULL;
 }
+static const char* CYL_KEYS[] = {"cyl_0", "cyl_1", "cyl_2", "cyl_3"};
+static char* CYCLE_GenerateJSON(void) {
+	char str_buffer[32];
 
-void SEND_VR_CallBack(Command_Result_t result) {
+	cJSON *root = cJSON_CreateObject();
+	if (root == NULL) {
+		return NULL;
+	}
+
+	cJSON *cycle_object = cJSON_CreateObject();
+	if (cycle_object == NULL) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+
+	cJSON *crankshaft = cJSON_CreateObject();
+	cJSON *camshaft = cJSON_CreateObject();
+	if (crankshaft == NULL || camshaft == NULL) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+
+	for (int i = 0; i < 4; i++) {
+		cJSON *cyl = cJSON_CreateObject();
+		snprintf(str_buffer, sizeof(str_buffer), "%.4f",
+				telemetry.cyl_telemetry[i].dwell_angle);
+		cJSON_AddRawToObject(cyl, "dwell_angle", str_buffer);
+
+		snprintf(str_buffer, sizeof(str_buffer), "%.4f",
+				telemetry.cyl_telemetry[i].spark_angle);
+		cJSON_AddRawToObject(cyl, "spark_angle", str_buffer);
+
+		cJSON_AddItemToObject(cycle_object, CYL_KEYS[i], cyl);
+	}
+
+	cJSON_AddItemToObject(root, "cycle", cycle_object);
+
+	char *json_string = cJSON_PrintUnformatted(root);
+
+	if (json_string != NULL) {
+		size_t total_len = strlen(json_string) + 1;
+		char *final_string = (char*) malloc(total_len);
+		if (final_string != NULL) {
+			snprintf(final_string, total_len, "%s", json_string);
+		}
+		cJSON_free(json_string);
+		cJSON_Delete(root);
+		return final_string;
+	}
+
+	cJSON_Delete(root);
+	return NULL;
+}
+
+void SEND_VR_CallBack(Command_Result_t result, char *answer) {
 	if (result == CMD_RESULT_SUCCESS) {
 		SERIAL_SendJSON(VR_GenerateJSON(), "OK", 150,
 		NULL);
@@ -572,7 +492,7 @@ void SEND_VR_CallBack(Command_Result_t result) {
 	}
 }
 
-void SEND_ADC_CallBack(Command_Result_t result) {
+void SEND_ADC_CallBack(Command_Result_t result, char *answer) {
 	if (result == CMD_RESULT_SUCCESS) {
 		SERIAL_SendJSON(ADC_GenerateJSON(), "OK", 150,
 		NULL);
@@ -581,7 +501,7 @@ void SEND_ADC_CallBack(Command_Result_t result) {
 	}
 }
 
-void SEND_Battery_CallBack(Command_Result_t result) {
+void SEND_Battery_CallBack(Command_Result_t result, char *answer) {
 	if (result == CMD_RESULT_SUCCESS) {
 		SERIAL_SendJSON(BATTERY_GenerateJSON(), "OK", 150,
 		NULL);
@@ -590,9 +510,18 @@ void SEND_Battery_CallBack(Command_Result_t result) {
 	}
 }
 
-void SEND_Engine_CallBack(Command_Result_t result) {
+void SEND_Engine_CallBack(Command_Result_t result, char *answer) {
 	if (result == CMD_RESULT_SUCCESS) {
 		SERIAL_SendJSON(ENGINE_GenerateJSON(), "OK", 150,
+		NULL);
+	} else if (result == CMD_RESULT_TIMEOUT) {
+
+	}
+}
+
+void SEND_Telemetry_CallBack(Command_Result_t result, char *answer) {
+	if (result == CMD_RESULT_SUCCESS) {
+		SERIAL_SendJSON(CYCLE_GenerateJSON(), "OK", 150,
 		NULL);
 	} else if (result == CMD_RESULT_TIMEOUT) {
 
@@ -612,6 +541,7 @@ void ADC_Read_Cycle(void) {
 }
 
 void ENGINE_INJECTOR_SCHEDULE_TEST_TOGGLE(void) {
+	printf("Toggle\r\n");
 	injector_schedule_test = !injector_schedule_test;
 }
 
@@ -647,12 +577,16 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+  /* Configure the peripherals common clocks */
+  PeriphCommonClock_Config();
+
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART3_UART_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
@@ -674,14 +608,12 @@ int main(void)
 	//Protocolo de Software Desktop
 	SERIAL_Init(&huart1);
 
-	ENGINE_UpdateCylinderPhases(0);
-
 	//Inicializacão dos ADCs
 	if (AD7998_Init(&hi2c2, 3.3f) != HAL_OK) {
 		printf("Failed to initialize ADCs!\r\n");
 	}
 
-	if (VR_Init(58, 1, 1000) == HAL_OK) {
+	if (VR_Init(58, 60, 3, 4, 1000) == HAL_OK) {
 		printf("VR sensors successfully initialized!\r\n");
 	} else
 		printf("Error starting VR sensors!\r\n");
@@ -709,39 +641,57 @@ int main(void)
 		SERIAL_ProcessQueue();
 		SERIAL_CheckRXCommand();
 
+		//ENGINE_Injector_TestLoop();
+		//ENGINE_Ignition_TestLoop();
+
+		//ENGINE_Injector_ScheduleTestLoop();
+		//ENGINE_Ignition_ScheduleTestLoop();
+
 		static uint32_t last_telemetry_tick = 0;
-		if ((HAL_GetTick() - last_telemetry_tick) >= 1000) {
+		if ((HAL_GetTick() - last_telemetry_tick) >= 75) {
 			last_telemetry_tick = HAL_GetTick();
 
 			if (is_connected) {
 
 				static uint8_t telemetry_step = 0;
 
-				if (!SERIAL_IsQueueFull()) {
+				if (!SERIAL_IsQueueFull() && current_command.active == 0) {
 
 					last_telemetry_tick = HAL_GetTick();
 
 					switch (telemetry_step) {
 					case 0:
-						SERIAL_SendCommand("AT+VR", "OK", 50, SEND_VR_CallBack);
+						//SERIAL_SendCommand("AT+VR", "OK", 50, SEND_VR_CallBack);
+						SERIAL_SendJSON(VR_GenerateJSON(), "OK", 150,
+						NULL);
 						telemetry_step++;
 						break;
-
+/*
 					case 1:
-						SERIAL_SendCommand("AT+ADC", "OK", 50,
-								SEND_ADC_CallBack);
+						//SERIAL_SendCommand("AT+ADC", "OK", 50,
+						//		SEND_ADC_CallBack);
 						telemetry_step++;
 						break;
 
 					case 2:
-						SERIAL_SendCommand("AT+BATTERY", "OK", 50,
-								SEND_Battery_CallBack);
+						//SERIAL_SendCommand("AT+BATTERY", "OK", 50,
+						//		SEND_Battery_CallBack);
+						telemetry_step++;
+						break;
+*/
+					case 1:
+						SERIAL_SendJSON(CYCLE_GenerateJSON(), "OK", 150,
+						NULL);
+						//SERIAL_SendCommand("AT+TELEMETRY", "OK", 50,
+						//		SEND_Telemetry_CallBack);
 						telemetry_step++;
 						break;
 
-					case 3:
-						SERIAL_SendCommand("AT+ENGINE", "OK", 50,
-								SEND_Engine_CallBack);
+					case 2:
+						//SERIAL_SendCommand("AT+ENGINE", "OK", 50,
+						//		SEND_Engine_CallBack);
+						SERIAL_SendJSON(ENGINE_GenerateJSON(), "OK", 150,
+						NULL);
 						telemetry_step = 0;
 						break;
 					}
@@ -750,15 +700,9 @@ int main(void)
 #ifdef DEBUG_PROTOCOL
 				printf("Try Connect to Workbench... \r\n");
 #endif
-				SERIAL_SendCommand("AT", "OK", 50, SERIAL_CheckConnection);
+				SERIAL_SendCommand("AT", "OK", 300, SERIAL_CheckConnection);
 			}
 		}
-
-		ENGINE_Injector_TestLoop();
-		ENGINE_Ignition_TestLoop();
-
-		ENGINE_Injector_ScheduleTestLoop();
-		ENGINE_Ignition_ScheduleTestLoop();
 
     /* USER CODE END WHILE */
 
@@ -790,11 +734,11 @@ void SystemClock_Config(void)
   * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_DIV2;
+  RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 2;
+  RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 10;
   RCC_OscInitStruct.PLL.PLLP = 2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
@@ -821,6 +765,33 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief Peripherals Common Clock Configuration
+  * @retval None
+  */
+void PeriphCommonClock_Config(void)
+{
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  /** Initializes the peripherals clock
+  */
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_USART1;
+  PeriphClkInitStruct.PLL2.PLL2M = 4;
+  PeriphClkInitStruct.PLL2.PLL2N = 9;
+  PeriphClkInitStruct.PLL2.PLL2P = 2;
+  PeriphClkInitStruct.PLL2.PLL2Q = 3;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_3;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
+  PeriphClkInitStruct.PLL2.PLL2FRACN = 3072;
+  PeriphClkInitStruct.Usart16ClockSelection = RCC_USART16CLKSOURCE_PLL2;
+  PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
@@ -1257,7 +1228,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 460800;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -1334,6 +1305,25 @@ static void MX_USART3_UART_Init(void)
   /* USER CODE BEGIN USART3_Init 2 */
 
   /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
+  /* DMA1_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
 
 }
 
