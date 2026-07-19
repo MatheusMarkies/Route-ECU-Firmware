@@ -65,6 +65,8 @@ void Error_Handler(void);
 #define CKP_GPIO_Port GPIOA
 #define CMP_Pin GPIO_PIN_1
 #define CMP_GPIO_Port GPIOA
+#define MCU_HEATER_OUT_Pin GPIO_PIN_6
+#define MCU_HEATER_OUT_GPIO_Port GPIOA
 #define Injector_1_Pin GPIO_PIN_9
 #define Injector_1_GPIO_Port GPIOE
 #define Injector_2_Pin GPIO_PIN_11
