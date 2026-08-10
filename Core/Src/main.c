@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -68,20 +69,17 @@ FDCAN_HandleTypeDef hfdcan1;
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
-SD_HandleTypeDef hsd1;
-
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim13;
+TIM_HandleTypeDef htim15;
 
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
-
-PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
 
@@ -102,10 +100,9 @@ static void MX_TIM4_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM13_Init(void);
-static void MX_SDMMC1_SD_Init(void);
 static void MX_UART5_Init(void);
-static void MX_USB_OTG_FS_PCD_Init(void);
 static void MX_FDCAN1_Init(void);
+static void MX_TIM15_Init(void);
 /* USER CODE BEGIN PFP */
 void I2C_Scanner(I2C_HandleTypeDef *hi2c);
 void SEND_VR_CallBack(Command_Result_t result, char *answer);
@@ -262,8 +259,7 @@ static char* VR_GenerateJSON(void) {
 	cJSON_AddNumberToObject(ckp, "pulses", ckp_sensor.pulse_count);
 	cJSON_AddNumberToObject(ckp, "revolutions", ckp_sensor.revolution_count);
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float) ckp_sensor.period);
-	cJSON_AddRawToObject(ckp, "period", str_buffer);
+	cJSON_AddNumberToObject(ckp, "period", ckp_sensor.period);
 
 	// --- CMP Data ---
 	snprintf(str_buffer, sizeof(str_buffer), "%.4f", cmp_sensor.rpm);
@@ -275,8 +271,7 @@ static char* VR_GenerateJSON(void) {
 	cJSON_AddNumberToObject(cmp, "pulses", cmp_sensor.pulse_count);
 	cJSON_AddNumberToObject(cmp, "revolutions", cmp_sensor.revolution_count);
 
-	snprintf(str_buffer, sizeof(str_buffer), "%.4f", (float) cmp_sensor.period);
-	cJSON_AddRawToObject(cmp, "period", str_buffer);
+	cJSON_AddNumberToObject(ckp, "period", cmp_sensor.period);
 
 	cJSON_AddItemToObject(root, "ckp", ckp);
 	cJSON_AddItemToObject(root, "cmp", cmp);
@@ -554,7 +549,6 @@ void ADC_Read_Cycle(void) {
 }
 
 void ENGINE_INJECTOR_SCHEDULE_TEST_TOGGLE(void) {
-	printf("Toggle\r\n");
 	injector_schedule_test = !injector_schedule_test;
 }
 
@@ -609,12 +603,16 @@ int main(void)
   MX_TIM1_Init();
   MX_ADC1_Init();
   MX_TIM13_Init();
-  MX_SDMMC1_SD_Init();
   MX_UART5_Init();
-  MX_USB_OTG_FS_PCD_Init();
   MX_FDCAN1_Init();
+  MX_TIM15_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
+	SERIAL_Init();
+
+	printf("hi2c1:\r\n");
 	I2C_Scanner(&hi2c1);
+	printf("hi2c2:\r\n");
 	I2C_Scanner(&hi2c2);
 
 	TIM1_Init_Config();
@@ -624,10 +622,9 @@ int main(void)
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 
 	//Protocolo de Software Desktop
-	SERIAL_Init(&huart1);
 
 	//Inicializacão dos ADCs
-	if (AD7998_Init(&hi2c2, 3.3f) != HAL_OK) {
+	if (AD7998_Init(&hi2c1, 3.3f) != HAL_OK) {
 		printf("Failed to initialize ADCs!\r\n");
 	}
 
@@ -659,17 +656,19 @@ int main(void)
 		SERIAL_ProcessQueue();
 		SERIAL_CheckRXCommand();
 
-		//ENGINE_Injector_TestLoop();
-		//ENGINE_Ignition_TestLoop();
+		ENGINE_Injector_TestLoop();
+		ENGINE_Ignition_TestLoop();
 
-		//ENGINE_Injector_ScheduleTestLoop();
-		//ENGINE_Ignition_ScheduleTestLoop();
+		ENGINE_Injector_ScheduleTestLoop();
+		ENGINE_Ignition_ScheduleTestLoop();
+
+		ENGINE_IGNITION_SCHEDULE_TEST_TOGGLE();
 
 		static uint32_t last_telemetry_tick = 0;
 		if ((HAL_GetTick() - last_telemetry_tick) >= 75) {
 			last_telemetry_tick = HAL_GetTick();
 
-			if (is_connected) {
+			//if (is_connected) {
 
 				static uint8_t telemetry_step = 0;
 
@@ -679,47 +678,42 @@ int main(void)
 
 					switch (telemetry_step) {
 					case 0:
-						//SERIAL_SendCommand("AT+VR", "OK", 50, SEND_VR_CallBack);
-						SERIAL_SendJSON(VR_GenerateJSON(), "OK", 150,
-						NULL);
-						telemetry_step++;
-						break;
-/*
+					    //SERIAL_SendCommand("AT+VR", NULL, 0, NULL);
+					    SERIAL_SendJSON(VR_GenerateJSON(), NULL, 0, NULL);
+					    telemetry_step = 4;
+					    break;
+
 					case 1:
-						//SERIAL_SendCommand("AT+ADC", "OK", 50,
-						//		SEND_ADC_CallBack);
-						telemetry_step++;
-						break;
+					    //SERIAL_SendCommand("AT+ADC", NULL, 0, NULL);
+					    SERIAL_SendJSON(ADC_GenerateJSON(), NULL, 0, NULL);
+					    telemetry_step++;
+					    break;
 
 					case 2:
-						//SERIAL_SendCommand("AT+BATTERY", "OK", 50,
-						//		SEND_Battery_CallBack);
-						telemetry_step++;
-						break;
-*/
-					case 1:
-						SERIAL_SendJSON(CYCLE_GenerateJSON(), "OK", 150,
-						NULL);
-						//SERIAL_SendCommand("AT+TELEMETRY", "OK", 50,
-						//		SEND_Telemetry_CallBack);
-						telemetry_step++;
-						break;
+					    //SERIAL_SendCommand("AT+BATTERY", NULL, 0, NULL);
+					    SERIAL_SendJSON(BATTERY_GenerateJSON(), NULL, 0, NULL);
+					    telemetry_step++;
+					    break;
 
-					case 2:
-						//SERIAL_SendCommand("AT+ENGINE", "OK", 50,
-						//		SEND_Engine_CallBack);
-						SERIAL_SendJSON(ENGINE_GenerateJSON(), "OK", 150,
-						NULL);
-						telemetry_step = 0;
-						break;
+					case 3:
+					    //SERIAL_SendCommand("AT+TELEMETRY", NULL, 0, NULL);
+					    SERIAL_SendJSON(CYCLE_GenerateJSON(), NULL, 0, NULL);
+					    telemetry_step++;
+					    break;
+
+					case 4:
+					    //SERIAL_SendCommand("AT+ENGINE", NULL, 0, NULL);
+					    SERIAL_SendJSON(ENGINE_GenerateJSON(), NULL, 0, NULL);
+					    telemetry_step = 0;
+					    break;
 					}
 				}
-			} else {
+			/*} else {
 #ifdef DEBUG_PROTOCOL
 				printf("Try Connect to Workbench... \r\n");
 #endif
 				SERIAL_SendCommand("AT", "OK", 300, SERIAL_CheckConnection);
-			}
+			}*/
 		}
 
     /* USER CODE END WHILE */
@@ -737,6 +731,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_CRSInitTypeDef RCC_CRSInitStruct = {0};
 
   /** Supply configuration update enable
   */
@@ -751,14 +746,16 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 1;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 10;
   RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 3;
+  RCC_OscInitStruct.PLL.PLLQ = 2;
   RCC_OscInitStruct.PLL.PLLR = 2;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOMEDIUM;
@@ -785,6 +782,21 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
+  /** Enable the SYSCFG APB clock
+  */
+  __HAL_RCC_CRS_CLK_ENABLE();
+
+  /** Configures CRS
+  */
+  RCC_CRSInitStruct.Prescaler = RCC_CRS_SYNC_DIV1;
+  RCC_CRSInitStruct.Source = RCC_CRS_SYNC_SOURCE_USB2;
+  RCC_CRSInitStruct.Polarity = RCC_CRS_SYNC_POLARITY_RISING;
+  RCC_CRSInitStruct.ReloadValue = __HAL_RCC_CRS_RELOADVALUE_CALCULATE(48000000,1000);
+  RCC_CRSInitStruct.ErrorLimitValue = 34;
+  RCC_CRSInitStruct.HSI48CalibrationValue = 32;
+
+  HAL_RCCEx_CRSConfig(&RCC_CRSInitStruct);
 }
 
 /**
@@ -797,8 +809,9 @@ void PeriphCommonClock_Config(void)
 
   /** Initializes the peripherals clock
   */
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_USART1;
-  PeriphClkInitStruct.PLL2.PLL2M = 1;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_FDCAN
+                              |RCC_PERIPHCLK_USART1;
+  PeriphClkInitStruct.PLL2.PLL2M = 4;
   PeriphClkInitStruct.PLL2.PLL2N = 9;
   PeriphClkInitStruct.PLL2.PLL2P = 2;
   PeriphClkInitStruct.PLL2.PLL2Q = 3;
@@ -806,6 +819,7 @@ void PeriphCommonClock_Config(void)
   PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_3;
   PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
   PeriphClkInitStruct.PLL2.PLL2FRACN = 3072;
+  PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
   PeriphClkInitStruct.Usart16ClockSelection = RCC_USART16CLKSOURCE_PLL2;
   PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
@@ -837,7 +851,7 @@ static void MX_ADC1_Init(void)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
-  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.Resolution = ADC_RESOLUTION_16B;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
@@ -869,7 +883,7 @@ static void MX_ADC1_Init(void)
   sConfig.Channel = ADC_CHANNEL_10;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.SingleDiff = ADC_DIFFERENTIAL_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   sConfig.OffsetSignedSaturation = DISABLE;
@@ -922,7 +936,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.RxBuffersNbr = 0;
   hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
   hfdcan1.Init.TxEventsNbr = 0;
-  hfdcan1.Init.TxBuffersNbr = 0;
+  hfdcan1.Init.TxBuffersNbr = 32;
   hfdcan1.Init.TxFifoQueueElmtsNbr = 0;
   hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
   hfdcan1.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
@@ -1029,37 +1043,6 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
-
-}
-
-/**
-  * @brief SDMMC1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SDMMC1_SD_Init(void)
-{
-
-  /* USER CODE BEGIN SDMMC1_Init 0 */
-
-  /* USER CODE END SDMMC1_Init 0 */
-
-  /* USER CODE BEGIN SDMMC1_Init 1 */
-
-  /* USER CODE END SDMMC1_Init 1 */
-  hsd1.Instance = SDMMC1;
-  hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
-  hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
-  hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
-  hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
-  hsd1.Init.ClockDiv = 0;
-  if (HAL_SD_Init(&hsd1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SDMMC1_Init 2 */
-
-  /* USER CODE END SDMMC1_Init 2 */
 
 }
 
@@ -1360,6 +1343,76 @@ static void MX_TIM13_Init(void)
 }
 
 /**
+  * @brief TIM15 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM15_Init(void)
+{
+
+  /* USER CODE BEGIN TIM15_Init 0 */
+
+  /* USER CODE END TIM15_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
+
+  /* USER CODE BEGIN TIM15_Init 1 */
+
+  /* USER CODE END TIM15_Init 1 */
+  htim15.Instance = TIM15;
+  htim15.Init.Prescaler = 0;
+  htim15.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim15.Init.Period = 65535;
+  htim15.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim15.Init.RepetitionCounter = 0;
+  htim15.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_PWM_Init(&htim15) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim15, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+  if (HAL_TIM_PWM_ConfigChannel(&htim15, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim15, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+  sBreakDeadTimeConfig.DeadTime = 0;
+  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+  sBreakDeadTimeConfig.BreakFilter = 0;
+  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+  if (HAL_TIMEx_ConfigBreakDeadTime(&htim15, &sBreakDeadTimeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM15_Init 2 */
+
+  /* USER CODE END TIM15_Init 2 */
+  HAL_TIM_MspPostInit(&htim15);
+
+}
+
+/**
   * @brief UART5 Initialization Function
   * @param None
   * @retval None
@@ -1504,42 +1557,6 @@ static void MX_USART3_UART_Init(void)
 }
 
 /**
-  * @brief USB_OTG_FS Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USB_OTG_FS_PCD_Init(void)
-{
-
-  /* USER CODE BEGIN USB_OTG_FS_Init 0 */
-
-  /* USER CODE END USB_OTG_FS_Init 0 */
-
-  /* USER CODE BEGIN USB_OTG_FS_Init 1 */
-
-  /* USER CODE END USB_OTG_FS_Init 1 */
-  hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
-  hpcd_USB_OTG_FS.Init.dev_endpoints = 9;
-  hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
-  hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.battery_charging_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.vbus_sensing_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
-  if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USB_OTG_FS_Init 2 */
-
-  /* USER CODE END USB_OTG_FS_Init 2 */
-
-}
-
-/**
   * Enable DMA controller clock
   */
 static void MX_DMA_Init(void)
@@ -1570,10 +1587,10 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
@@ -1625,7 +1642,7 @@ void TIM5_Init_Config(void) {
 	HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_2);
 
 	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_3,
-			__HAL_TIM_GET_COUNTER(&htim5) + 10); //__HAL_TIM_GET_COUNTER(&htim5) + 10 a cada 10 ticks
+	__HAL_TIM_GET_COUNTER(&htim5) + 10); //__HAL_TIM_GET_COUNTER(&htim5) + 10 a cada 10 ticks
 	HAL_TIM_OC_Start_IT(&htim5, TIM_CHANNEL_3);
 
 	HAL_TIM_OC_Start_IT(&htim5, TIM_CHANNEL_4);
@@ -1633,13 +1650,13 @@ void TIM5_Init_Config(void) {
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	if (huart->Instance == USART1) {
-		PROTOCOL_RX_Callback();
+		//PROTOCOL_RX_Callback();
 	}
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 	if (huart->Instance == USART1) {
-		PROTOCOL_TX_Callback();
+		//PROTOCOL_TX_Callback();
 	}
 }
 

@@ -1,0 +1,7 @@
+../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c:979:6:USBD_CtlError.constprop	1
+../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c:104:20:USBD_StdDevReq	58
+../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c:167:20:USBD_StdItfReq	9
+../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c:239:20:USBD_StdEPReq	32
+../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c:950:6:USBD_ParseSetupRequest	1
+../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c:979:6:USBD_CtlError	1
+../Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c:996:6:USBD_GetString	3

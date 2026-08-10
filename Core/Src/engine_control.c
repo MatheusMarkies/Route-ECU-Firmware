@@ -141,7 +141,7 @@ static float ENGINE_CalculateAngularVelocity(VR_Sensor_t sensor) {
 		return 0.0f;
 
 	float delta_theta = 360.0f / (float) sensor.tooths;
-	float omega_now = delta_theta / ((float) sensor.period * 1e-6f);
+	float omega_now = delta_theta / sensor.period;
 
 	return omega_now; //Graus/seg
 }
@@ -155,10 +155,10 @@ static float ENGINE_CalculateAngularAcceleration(VR_Sensor_t sensor) {
 
 	float delta_theta = 360.0f / sensor.tooths;
 
-	float omega_now = delta_theta / (sensor.period * 1e-6f);
-	float omega_prev = delta_theta / (sensor.last_period * 1e-6f);
+	float omega_now = delta_theta / sensor.period;
+	float omega_prev = delta_theta / sensor.last_period;
 
-	float delta_t_avg = 0.5f * ((sensor.period + sensor.last_period) * 1e-6f);
+	float delta_t_avg = 0.5f * (sensor.period + sensor.last_period);
 
 	float angular_acc = (omega_now - omega_prev) / delta_t_avg;
 
@@ -176,6 +176,9 @@ static float ENGINE_CalculateFixedAngle(VR_Sensor_t sensor) {
 	float degrees_per_tooth = 360.0f / (float) sensor.tooths;
 	float fixed_angle = degrees_per_tooth * (float) sensor.pulse_count;
 
+	if(!sensor.is_first_rev)
+		fixed_angle += 360.0f;
+
 	return wrap(fixed_angle, ANGLE_CYCLE);
 }
 
@@ -186,10 +189,14 @@ static float ENGINE_CalculateAngle(VR_Sensor_t sensor) {
 	if (sensor.frequency_hz <= 0.0f || sensor.period == 0 || sensor.tooths == 0)
 		return 0.0f;
 
-	float degrees_per_tooth = 360.0f / sensor.tooths;
+	float degrees_per_tooth = 360.0f / (float)sensor.tooths;
 
-	float base_angle = degrees_per_tooth * sensor.pulse_count;
-	float dt = (float) ENGINE_CalculateDeltaT(timer_snapshot.tim5, sensor.current_edge_time); // us
+	float base_angle = degrees_per_tooth * (float) sensor.pulse_count;
+
+	if(!sensor.is_first_rev)
+		base_angle += 360.0f;
+
+	float dt = (float) ENGINE_CalculateDeltaT(timer_snapshot.tim5, sensor.current_edge_time) / 1e6f; // us
 
 	float frac = dt / (float) sensor.period;
 
@@ -242,6 +249,7 @@ void ENGINE_PhaseOCCallback(void){
 	ENGINE_UpdateCylinderPhases(engine.crankshaft_angle);
 }
 
+float missing_teeth_gap = 4.0f;
 void ENGINE_ScheduleControl(VR_Sensor_t ckp_sensor){
 	ENGINE_CaptureTimers();
 
@@ -286,13 +294,13 @@ void ENGINE_ScheduleControl(VR_Sensor_t ckp_sensor){
 	uint32_t time_to_dwell_us = (uint32_t)(time_to_dwell_s * 1e6);
 
 	float tooths_to_dwell = (float)dwell_us / ckp_sensor.period;
-	tooths_to_dwell = clampf(tooths_to_dwell, 1.0f, (float)ckp_sensor.tooths);
+	tooths_to_dwell = clampf(tooths_to_dwell, missing_teeth_gap, (float)ckp_sensor.tooths);
 	if(delta_to_phase_angle < (360.0f/(float)ckp_sensor.tooths * tooths_to_dwell + 1.0f)){
 		ENGINE_Schedule_Dwell(firing_cylinder, time_to_dwell_us, dwell_us);
 	}
 
-	if(delta_to_phase_angle < (360.0f/(float)ckp_sensor.tooths + 1.0f)){
-		ENGINE_Schedule_Injection(injection_cylinder, time_to_next_phase_us, 20000);
+	if(delta_to_phase_angle < (360.0f/(float)ckp_sensor.tooths * missing_teeth_gap + 1.0f)){
+	    ENGINE_Schedule_Injection(injection_cylinder, time_to_next_phase_us, 20000);
 	}
 
 	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_4, match);

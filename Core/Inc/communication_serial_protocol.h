@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "usbd_cdc_if.h"
 
 #define CMD_QUEUE_SIZE 12
 #define MAX_CMD_LENGTH 1536
@@ -82,7 +83,8 @@ extern uint8_t PROTOCOL_RX_Stream_Data;
 extern volatile int PROTOCOL_Stream_Index;
 extern volatile uint16_t last_rx_tick;
 
-void SERIAL_Init(UART_HandleTypeDef *huart);
+void SERIAL_Init(void);
+void PROTOCOL_RX_Feed(uint8_t *data, uint32_t len);
 
 uint8_t SERIAL_QueueCommand(const char *command, const char *answer,
                              uint32_t timeout, CommandCallback_t callback);
@@ -101,8 +103,5 @@ void SERIAL_CheckRXCommand(void);
 void SERIAL_CheckConnection(Command_Result_t result, char *answer);
 
 void SERIAL_ResetBuffers(void);
-
-void PROTOCOL_RX_Callback(void);
-void PROTOCOL_TX_Callback(void);
 
 #endif /* INC_COMMUNICATION_SERIAL_PROTOCOL_H_ */

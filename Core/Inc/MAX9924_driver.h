@@ -14,7 +14,9 @@
 
 //Resolucao dos Input Captures usando o pre escaler de 124 e HCLK de 125MHz: CK_CNT = HCLK / (PSC+1) = 1000000 Hz ~ 0.001ms
 
-#define LARGEST_RATIO 1000000
+#define LARGEST_RATIO 2
+
+#define DEBUG_CKP 0
 
 // Tipo de sensor VR
 typedef enum {
@@ -51,14 +53,14 @@ typedef struct {
     // Timing
     uint32_t last_edge_time;        // Timestamp da última borda (ms)
     uint32_t current_edge_time;        // Timestamp da última borda (ms)
-    uint32_t pulse_width;           // Largura do último pulso (ms)
-    uint32_t period;                // Período entre pulsos (ms)
-    uint32_t last_period;                // Período entre pulsos (ms)
+    float elapsed_time;                // Período de uma rotação (us)
+    float last_period;
+    float period;
 
     // RPM e velocidade
     float rpm;                      // Rotações por minuto calculadas
     float frequency_hz;             // Frequência em Hz
-    float filtered_delta_us;
+    uint32_t filtered_delta_us;
 
     uint16_t tooths;
 

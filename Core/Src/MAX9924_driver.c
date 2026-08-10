@@ -26,6 +26,7 @@ HAL_StatusTypeDef VR_Init(uint32_t ckp_pulses_per_rev, uint32_t ckp_tooths,
 	ckp_sensor.tooths = ckp_tooths;
 	ckp_sensor.pulse_count_per_rev = ckp_pulses_per_rev;
 	ckp_sensor.timeout_ms = timeout_ms;
+	ckp_sensor.is_first_rev = 1;
 
 	// Inicializa sensor CMP (Camshaft)
 	memset(&cmp_sensor, 0, sizeof(VR_Sensor_t));
@@ -35,6 +36,7 @@ HAL_StatusTypeDef VR_Init(uint32_t ckp_pulses_per_rev, uint32_t ckp_tooths,
 	cmp_sensor.tooths = cmp_tooths;
 	cmp_sensor.pulse_count_per_rev = cmp_pulses_per_rev;
 	cmp_sensor.timeout_ms = timeout_ms;
+	cmp_sensor.is_first_rev = 1;
 
 	return HAL_OK;
 }
@@ -57,8 +59,6 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type) {
 	uint32_t current_time = 0;
 	VR_Sensor_t temp;
 
-	uint8_t is_largest_tooth = 0;
-
 	if (type == SENSOR_CKP) {
 		current_time = HAL_TIM_ReadCapturedValue(&htim5, CKP_CHANNEL);
 		temp = ckp_sensor;
@@ -67,49 +67,34 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type) {
 		temp = cmp_sensor;
 	}
 
-	if (temp.rpm < 1000)
-	    alpha = 0.08f;
-	else if (temp.rpm < 3000)
-	    alpha = 0.12f;
-	else if (temp.rpm < 10000)
-	    alpha = 0.2f;
-	else alpha = 0.25f;
-
 	temp.current_edge_time = current_time;
-	temp.last_period = temp.period;
 
-	uint32_t delta = VR_CalculateDeltaT(current_time, temp.last_edge_time);
-	temp.filtered_delta_us = temp.filtered_delta_us + alpha * ((float)delta - temp.filtered_delta_us); //EMA (Exponential Moving Average) PRECISA DIVIDIR ENTRE CMP E CKP
+	uint32_t delta = VR_CalculateDeltaT(temp.current_edge_time,
+			temp.last_edge_time);
+	uint32_t ratio =
+			(temp.filtered_delta_us == 0) ?
+					0 : (delta / temp.filtered_delta_us);
 
-	if (delta < 60) {  // < 1/15000s = > 15kHz 14000/60 * tooths Hz
-		return;
-	}
+	temp.filtered_delta_us = delta;
 
-	float ratio = (float) delta / (float) temp.period;
+	if(ratio >= LARGEST_RATIO || (DEBUG_CKP == 1 && temp.pulse_count > 57)){
+		temp.pulse_count = 0;
+		temp.elapsed_time = 0;
+		temp.isSync = 1;
 
-	uint32_t expected_count = temp.is_first_rev ? (temp.tooths * 2) : temp.tooths;
-	if ((ratio >= LARGEST_RATIO || temp.pulse_count >= expected_count) && temp.pulse_count > 1) {
-		if (temp.isSync) {
-			temp.revolution_count += 1;
+		temp.is_first_rev = !temp.is_first_rev;
+	}else{
+		temp.pulse_count += 1;
+		temp.elapsed_time += (float) delta / 1e6f;
+		temp.frequency_hz = (temp.pulse_count / temp.elapsed_time);
 
-			is_largest_tooth = 1;
-		} else
-			temp.isSync = true;
+		temp.last_period = temp.period;
 
-		if (temp.is_first_rev == 0) {
-			temp.pulse_count = 0;
-			temp.is_first_rev = 1;
-		} else
-			temp.is_first_rev = 0;
-	} else{
-		temp.frequency_hz = 1e6f/temp.filtered_delta_us;
+		temp.period = 1.0f / temp.frequency_hz;
 		temp.rpm = 60.0f * temp.frequency_hz;
 	}
 
 	temp.last_edge_time = current_time;
-	temp.period = delta;  //us
-
-	temp.pulse_count+=1;
 
 	if (type == SENSOR_CKP) {
 		ckp_sensor = temp;

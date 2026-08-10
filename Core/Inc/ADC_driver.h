@@ -14,7 +14,7 @@
 
 // Endereços I2C dos ADCs (7-bit)
 #define AD7998_U16_ADDR    0x23  // AD7998 U16 (AS=AGND)
-#define AD7998_U17_ADDR    0x24  // AD7998 U17 (AS=VDD)
+#define AD7998_U17_ADDR    0x20  // AD7998 U17 (AS=VDD)
 
 // Registradores internos do AD7998
 #define AD7998_REG_CONVERSION_RESULT   0x00

@@ -9,6 +9,8 @@
 #include "Battery_manager.h"
 #include "main.h"
 
+static uint8_t PROTOCOL_USB_Transmit(uint8_t *data, uint16_t len);
+
 uint8_t PROTOCOL_RX_Buffer[PROTOCOL_RX_BUFFER_SIZE];
 uint8_t PROTOCOL_RX_Stream_Data = 0;
 volatile int PROTOCOL_Stream_Index = 0;
@@ -30,25 +32,15 @@ volatile uint8_t is_connected = 0;
 Command_Queue_t command_queue = { 0 };
 Command_Context_t current_command = { 0 };
 
-void SERIAL_Init(UART_HandleTypeDef *huart) {
-	huart_instance = huart;
-
-	memset(&command_queue, 0, sizeof(Command_Queue_t));
-	command_queue.head = 0;
-	command_queue.tail = 0;
-	command_queue.count = 0;
-
-	memset(&current_command, 0, sizeof(Command_Context_t));
-	current_command.active = 0;
-
-	memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
-	PROTOCOL_Stream_Index = 0;
-
-	if (huart_instance != NULL) {
-		HAL_UART_Receive_IT(huart_instance, &PROTOCOL_RX_Stream_Data, 1);
-	}
-
-	protocol_status = FREE;
+void SERIAL_Init(void) {
+    memset(&command_queue, 0, sizeof(Command_Queue_t));
+    command_queue.head = command_queue.tail = command_queue.count = 0;
+    memset(&current_command, 0, sizeof(Command_Context_t));
+    current_command.active = 0;
+    memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
+    PROTOCOL_Stream_Index = 0;
+    protocol_status = FREE;
+    // CDC re-arma o RX sozinho em CDC_Receive_FS
 }
 
 uint8_t SERIAL_QueueCommand(const char *command, const char *answer,
@@ -148,40 +140,22 @@ void SERIAL_ProcessQueue(void) {
 	if (protocol_status != FREE) {
 		return;
 	}
-	if (SERIAL_GetNextCommand(&current_command)) {
-		SERIAL_ResetBuffers();
-
-		HAL_StatusTypeDef status = HAL_UART_Transmit_IT(huart_instance,
-				(uint8_t*) current_command.cmd, strlen(current_command.cmd));
-
-		if (status == HAL_OK) {
-			protocol_status = WAITING;
-#ifdef DEBUG_SERIAL_PROTOCOL
-            printf("[SERIAL PROTOCOL] Command sent: %s \r\n", current_command.cmd);
-#endif
-		} else {
-#ifdef DEBUG_SERIAL_PROTOCOL
-            printf("[SERIAL PROTOCOL] Error sending command!\r\n");
-#endif
-
-			if (current_command.callback) {
-				current_command.callback(CMD_RESULT_ERROR, NULL);
-			}
-
-			current_command.active = 0;
-			protocol_status = FREE;
-		}
-	}
+    if (SERIAL_GetNextCommand(&current_command)) {
+        SERIAL_ResetBuffers();
+        if (PROTOCOL_USB_Transmit((uint8_t*) current_command.cmd,
+                                  strlen(current_command.cmd))) {
+            protocol_status = WAITING;
+        } else {
+            if (current_command.callback)
+                current_command.callback(CMD_RESULT_ERROR, NULL);
+            current_command.active = 0;
+            protocol_status = FREE;
+        }
+    }
 }
 
 void SERIAL_SendCommand(char command[], char answer[], uint32_t timeout,
 		CommandCallback_t callback) {
-	if (huart_instance == NULL) {
-#ifdef DEBUG_SERIAL_PROTOCOL
-        printf("[SERIAL PROTOCOL] ERROR: UART not initialized!\r\n");
-#endif
-		return;
-	}
 
 	if (!SERIAL_QueueCommand(command, answer, timeout, callback)) {
 #ifdef DEBUG_SERIAL_PROTOCOL
@@ -199,18 +173,6 @@ void SERIAL_SendJSON(char *json_string, char answer[], uint32_t timeout,
 #ifdef DEBUG_SERIAL_PROTOCOL
         printf("[SERIAL PROTOCOL] ERRO: JSON string é NULL!\r\n");
 #endif
-
-		if (callback) {
-			callback(CMD_RESULT_ERROR, NULL);
-		}
-		return;
-	}
-
-	if (huart_instance == NULL) {
-#ifdef DEBUG_SERIAL_PROTOCOL
-        printf("[SERIAL PROTOCOL] ERROR: UART not initialized!\r\n");
-#endif
-		free(json_string);
 
 		if (callback) {
 			callback(CMD_RESULT_ERROR, NULL);
@@ -264,13 +226,8 @@ void SERIAL_SendJSON(char *json_string, char answer[], uint32_t timeout,
 }
 
 void SERIAL_DirectTransmit(char *cmd) {
-	if (huart_instance == NULL || cmd == NULL) {
-		return;
-	}
-
-	printf(">> TX direto: %s", cmd);
-
-	HAL_UART_Transmit(huart_instance, (uint8_t*) cmd, strlen(cmd), 100);
+    if (cmd == NULL) return;
+    PROTOCOL_USB_Transmit((uint8_t*) cmd, strlen(cmd));
 }
 
 void SERIAL_CheckRXCommand(void) {
@@ -365,38 +322,30 @@ void SERIAL_CheckRXCommand(void) {
 }
 
 void SERIAL_ResetBuffers(void) {
-	PROTOCOL_RX_Stream_Data = 0;
-	PROTOCOL_Stream_Index = 0;
-
-	memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
-
-	if (huart_instance != NULL) {
-		HAL_UART_Receive_IT(huart_instance, &PROTOCOL_RX_Stream_Data, 1);
-	}
+    PROTOCOL_RX_Stream_Data = 0;
+    PROTOCOL_Stream_Index = 0;
+    memset(PROTOCOL_RX_Buffer, 0, sizeof(PROTOCOL_RX_Buffer));
+    // CDC: nada a re-armar aqui
 }
 
-void PROTOCOL_RX_Callback(void) {
-	if (PROTOCOL_Stream_Index < PROTOCOL_RX_BUFFER_SIZE - 1) {
-		PROTOCOL_RX_Buffer[PROTOCOL_Stream_Index++] = PROTOCOL_RX_Stream_Data;
-		last_rx_tick = HAL_GetTick();
-	} else {
-		// Buffer cheio
-#ifdef DEBUG_SERIAL_PROTOCOL
-        printf("[SERIAL PROTOCOL] WARNING: RX buffer overflow!\r\n");
-#endif
-		SERIAL_ResetBuffers();
-	}
-
-	HAL_UART_Receive_IT(huart_instance, &PROTOCOL_RX_Stream_Data, 1);
+void PROTOCOL_RX_Feed(uint8_t *data, uint32_t len) {
+    for (uint32_t i = 0; i < len; i++) {
+        if (PROTOCOL_Stream_Index < PROTOCOL_RX_BUFFER_SIZE - 1) {
+            PROTOCOL_RX_Buffer[PROTOCOL_Stream_Index++] = data[i];
+            last_rx_tick = HAL_GetTick();
+        } else {
+            SERIAL_ResetBuffers();
+        }
+    }
 }
 
-void PROTOCOL_TX_Callback(void) {
-	// Transmissão completa
-	if (current_command.active) {
-		protocol_status = WAITING;
-	} else {
-		protocol_status = FREE;
-	}
+static uint8_t PROTOCOL_USB_Transmit(uint8_t *data, uint16_t len) {
+    uint32_t start = HAL_GetTick();
+    while ((HAL_GetTick() - start) < 50) {          // 50 ms de orçamento
+        if (CDC_Transmit_FS(data, len) == USBD_OK) return 1;
+        // USBD_BUSY: transferência anterior em curso, tenta de novo
+    }
+    return 0;
 }
 
 void SERIAL_CheckConnection(Command_Result_t result, char *answer) {
