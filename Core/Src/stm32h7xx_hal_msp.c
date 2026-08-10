@@ -102,6 +102,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     /**ADC1 GPIO Configuration
     PC0     ------> ADC1_INP10
     PC1     ------> ADC1_INN10
+    PC1     ------> ADC1_INP11
     */
     GPIO_InitStruct.Pin = Bat_Voltage_Pin|Internal_MAP_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -135,6 +136,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     /**ADC1 GPIO Configuration
     PC0     ------> ADC1_INP10
     PC1     ------> ADC1_INN10
+    PC1     ------> ADC1_INP11
     */
     HAL_GPIO_DeInit(GPIOC, Bat_Voltage_Pin|Internal_MAP_Pin);
 

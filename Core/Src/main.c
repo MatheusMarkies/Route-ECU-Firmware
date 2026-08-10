@@ -33,6 +33,7 @@
 #include "MAX9924_driver.h"
 #include "engine_control.h"
 #include "Battery_manager.h"
+#include "MAP_sensor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -491,6 +492,80 @@ static char* CYCLE_GenerateJSON(void) {
 	return NULL;
 }
 
+static char* MAP_GenerateJSON(void) {
+	char str_buffer[32];
+
+	cJSON *root = cJSON_CreateObject();
+	if (root == NULL) {
+		return NULL;
+	}
+
+	cJSON *map_object = cJSON_CreateObject();
+	if (map_object == NULL) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+
+	// --- Variáveis de Pressão e ADC ---
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", map.pressure);
+	cJSON_AddRawToObject(map_object, "pressure", str_buffer);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", map.pressure_cycle);
+	cJSON_AddRawToObject(map_object, "pressure_cycle", str_buffer);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", map.baro);
+	cJSON_AddRawToObject(map_object, "baro", str_buffer);
+
+	cJSON_AddNumberToObject(map_object, "raw_adc", map.raw_adc);
+
+	snprintf(str_buffer, sizeof(str_buffer), "%.6f", map.linear_cte);
+	cJSON_AddRawToObject(map_object, "linear_cte", str_buffer);
+
+	// --- Calibração Baixa (calL) ---
+	cJSON *calL_object = cJSON_CreateObject();
+	if (calL_object == NULL) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", map.calL.pressure);
+	cJSON_AddRawToObject(calL_object, "pressure", str_buffer);
+	cJSON_AddNumberToObject(calL_object, "raw_adc", map.calL.raw_adc);
+	cJSON_AddItemToObject(map_object, "calL", calL_object);
+
+	// --- Calibração Alta (calH) ---
+	cJSON *calH_object = cJSON_CreateObject();
+	if (calH_object == NULL) {
+		cJSON_Delete(root);
+		return NULL;
+	}
+	snprintf(str_buffer, sizeof(str_buffer), "%.4f", map.calH.pressure);
+	cJSON_AddRawToObject(calH_object, "pressure", str_buffer);
+	cJSON_AddNumberToObject(calH_object, "raw_adc", map.calH.raw_adc);
+	cJSON_AddItemToObject(map_object, "calH", calH_object);
+
+	// --- Status e Diagnóstico ---
+	cJSON_AddBoolToObject(map_object, "valid", map.valid);
+	cJSON_AddNumberToObject(map_object, "fault_count", map.fault_count);
+
+	cJSON_AddItemToObject(root, "map", map_object);
+
+	char *json_string = cJSON_PrintUnformatted(root);
+
+	if (json_string != NULL) {
+		size_t total_len = strlen(json_string) + 1;
+		char *final_string = (char*) malloc(total_len);
+		if (final_string != NULL) {
+			snprintf(final_string, total_len, "%s", json_string);
+		}
+		cJSON_free(json_string);
+		cJSON_Delete(root);
+		return final_string;
+	}
+
+	cJSON_Delete(root);
+	return NULL;
+}
+
 void SEND_VR_CallBack(Command_Result_t result, char *answer) {
 	if (result == CMD_RESULT_SUCCESS) {
 		SERIAL_SendJSON(VR_GenerateJSON(), "OK", 150,
@@ -624,6 +699,27 @@ int main(void)
 	//Protocolo de Software Desktop
 
 	//Inicializacão dos ADCs
+	if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	BATTERY_Init();
+	BATTERY_LoadDefaultCurve();
+
+	MAP_Init();
+	MAP_LoadDefaultCurve();
+
+	HAL_Delay(50);
+
+	if (MAP_Update() && map.pressure > 80.0f) {
+	    map.baro = map.pressure;
+	    map.pressure_cycle = map.baro;
+	    printf("[MAP] Baro na chave: %.1f kPa\r\n", map.baro);
+	} else {
+	    printf("[MAP] AVISO: baro nao capturada, mantendo %.1f kPa\r\n", map.baro);
+	}
+
 	if (AD7998_Init(&hi2c1, 3.3f) != HAL_OK) {
 		printf("Failed to initialize ADCs!\r\n");
 	}
@@ -632,8 +728,6 @@ int main(void)
 		printf("VR sensors successfully initialized!\r\n");
 	} else
 		printf("Error starting VR sensors!\r\n");
-
-	BATTERY_Init();
 
 	printf("\r\n");
   /* USER CODE END 2 */
@@ -650,7 +744,7 @@ int main(void)
 		static uint32_t last_BATTERY_read = 0;
 		if (HAL_GetTick() - last_BATTERY_read >= 15) {
 			last_BATTERY_read = HAL_GetTick();
-			BATTERY_ReadVoltage();
+			BATTERY_Poll();
 		}
 
 		SERIAL_ProcessQueue();
@@ -680,7 +774,7 @@ int main(void)
 					case 0:
 					    //SERIAL_SendCommand("AT+VR", NULL, 0, NULL);
 					    SERIAL_SendJSON(VR_GenerateJSON(), NULL, 0, NULL);
-					    telemetry_step = 4;
+					    telemetry_step++;
 					    break;
 
 					case 1:
@@ -702,6 +796,12 @@ int main(void)
 					    break;
 
 					case 4:
+					    //SERIAL_SendCommand("AT+ENGINE", NULL, 0, NULL);
+					    SERIAL_SendJSON(MAP_GenerateJSON(), NULL, 0, NULL);
+					    telemetry_step++;
+					    break;
+
+					case 5:
 					    //SERIAL_SendCommand("AT+ENGINE", NULL, 0, NULL);
 					    SERIAL_SendJSON(ENGINE_GenerateJSON(), NULL, 0, NULL);
 					    telemetry_step = 0;
@@ -851,7 +951,7 @@ static void MX_ADC1_Init(void)
   */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
-  hadc1.Init.Resolution = ADC_RESOLUTION_16B;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
@@ -883,7 +983,7 @@ static void MX_ADC1_Init(void)
   sConfig.Channel = ADC_CHANNEL_10;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  sConfig.SingleDiff = ADC_DIFFERENTIAL_ENDED;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   sConfig.OffsetSignedSaturation = DISABLE;

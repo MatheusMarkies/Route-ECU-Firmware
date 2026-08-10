@@ -39,7 +39,8 @@ Core/Src/MAX9924_driver.o: ../Core/Src/MAX9924_driver.c \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_ll_usb.h \
  ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd_ex.h \
- ../Core/Inc/engine_control.h ../Core/Inc/MAX9924_driver.h
+ ../Core/Inc/engine_control.h ../Core/Inc/MAX9924_driver.h \
+ ../Core/Inc/Battery_manager.h ../Core/Inc/MAP_sensor.h
 ../Core/Inc/MAX9924_driver.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h:
@@ -83,3 +84,5 @@ Core/Src/MAX9924_driver.o: ../Core/Src/MAX9924_driver.c \
 ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pcd_ex.h:
 ../Core/Inc/engine_control.h:
 ../Core/Inc/MAX9924_driver.h:
+../Core/Inc/Battery_manager.h:
+../Core/Inc/MAP_sensor.h:

@@ -282,7 +282,7 @@ void SERIAL_CheckRXCommand(void) {
 #endif
 				SERIAL_DirectTransmit("OK\r");
 				is_connected = 1;
-				BATTERY_Calibrate();
+				//BATTERY_Calibrate();
 			} else if (strstr(last_response_received, "AT+INJTEST")) {
 #ifdef DEBUG_SERIAL_PROTOCOL
                 printf("[SERIAL PROTOCOL] Responding: OK\r\n");
@@ -305,7 +305,7 @@ void SERIAL_CheckRXCommand(void) {
 			#endif
 			        SERIAL_DirectTransmit("OK\r");
 			        is_connected = 1;
-			        BATTERY_Calibrate_LV(calibration_value);
+			        //BATTERY_Calibrate_Low(calibration_value);
 			    } else {
 			#ifdef DEBUG_SERIAL_PROTOCOL
 			        printf("[SERIAL PROTOCOL] Invalid calibration format\r\n");

@@ -1,5 +1,6 @@
 "./Core/Src/ADC_driver.o"
 "./Core/Src/Battery_manager.o"
+"./Core/Src/MAP_sensor.o"
 "./Core/Src/MAX9924_driver.o"
 "./Core/Src/cJSON.o"
 "./Core/Src/communication_serial_protocol.o"

@@ -6,6 +6,8 @@
  */
 
 #include "engine_control.h"
+#include "Battery_manager.h"
+#include "MAP_sensor.h"
 #include "stdio.h"
 #include "string.h"
 
@@ -245,6 +247,14 @@ void ENGINE_PhaseOCCallback(void){
 	engine.crankshaft_angle = ENGINE_CalculateAngle(ckp_sensor);
 	engine.crankshaft_angular_velocity = ENGINE_CalculateAngularVelocity(ckp_sensor);
 	engine.crankshaft_angular_acc = ENGINE_CalculateAngularAcceleration(ckp_sensor);
+
+	if(engine.crankshaft_angle < (0.0f + 360.0f/(float)ckp_sensor.tooths)){
+
+	}
+
+	if(engine.crankshaft_angle > (720.0f - 360.0f/(float)ckp_sensor.tooths)){
+		MAP_OnCycleComplete();
+	}
 
 	ENGINE_UpdateCylinderPhases(engine.crankshaft_angle);
 }

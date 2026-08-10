@@ -7,6 +7,8 @@
 
 #include "MAX9924_driver.h"
 #include "engine_control.h"
+#include "Battery_manager.h"
+#include "MAP_sensor.h"
 #include "stdio.h"
 #include "string.h"
 
@@ -85,19 +87,26 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type) {
 		temp.is_first_rev = !temp.is_first_rev;
 	}else{
 		temp.pulse_count += 1;
-		temp.elapsed_time += (float) delta / 1e6f;
-		temp.frequency_hz = (temp.pulse_count / temp.elapsed_time);
+		temp.elapsed_time += (float)delta / 1e6f;
+
+		float revolution_freq = (temp.pulse_count / (temp.elapsed_time * temp.pulse_count_per_rev));
+
+		temp.frequency_hz = (revolution_freq * temp.pulse_count_per_rev);
 
 		temp.last_period = temp.period;
 
-		temp.period = 1.0f / temp.frequency_hz;
-		temp.rpm = 60.0f * temp.frequency_hz;
+		temp.period = 1.0f / revolution_freq;
+		temp.rpm = 60.0f * revolution_freq;
 	}
 
 	temp.last_edge_time = current_time;
 
 	if (type == SENSOR_CKP) {
 		ckp_sensor = temp;
+
+		MAP_OnCrankTooth();
+		BATTERY_OnCrankTooth();
+
 		ENGINE_CKP_Callback(ckp_sensor);
 	} else {
 		cmp_sensor = temp;

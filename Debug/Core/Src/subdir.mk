@@ -7,6 +7,7 @@
 C_SRCS += \
 ../Core/Src/ADC_driver.c \
 ../Core/Src/Battery_manager.c \
+../Core/Src/MAP_sensor.c \
 ../Core/Src/MAX9924_driver.c \
 ../Core/Src/cJSON.c \
 ../Core/Src/communication_serial_protocol.c \
@@ -21,6 +22,7 @@ C_SRCS += \
 OBJS += \
 ./Core/Src/ADC_driver.o \
 ./Core/Src/Battery_manager.o \
+./Core/Src/MAP_sensor.o \
 ./Core/Src/MAX9924_driver.o \
 ./Core/Src/cJSON.o \
 ./Core/Src/communication_serial_protocol.o \
@@ -35,6 +37,7 @@ OBJS += \
 C_DEPS += \
 ./Core/Src/ADC_driver.d \
 ./Core/Src/Battery_manager.d \
+./Core/Src/MAP_sensor.d \
 ./Core/Src/MAX9924_driver.d \
 ./Core/Src/cJSON.d \
 ./Core/Src/communication_serial_protocol.d \
@@ -54,7 +57,7 @@ Core/Src/%.o Core/Src/%.su Core/Src/%.cyclo: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/ADC_driver.cyclo ./Core/Src/ADC_driver.d ./Core/Src/ADC_driver.o ./Core/Src/ADC_driver.su ./Core/Src/Battery_manager.cyclo ./Core/Src/Battery_manager.d ./Core/Src/Battery_manager.o ./Core/Src/Battery_manager.su ./Core/Src/MAX9924_driver.cyclo ./Core/Src/MAX9924_driver.d ./Core/Src/MAX9924_driver.o ./Core/Src/MAX9924_driver.su ./Core/Src/cJSON.cyclo ./Core/Src/cJSON.d ./Core/Src/cJSON.o ./Core/Src/cJSON.su ./Core/Src/communication_serial_protocol.cyclo ./Core/Src/communication_serial_protocol.d ./Core/Src/communication_serial_protocol.o ./Core/Src/communication_serial_protocol.su ./Core/Src/engine_control.cyclo ./Core/Src/engine_control.d ./Core/Src/engine_control.o ./Core/Src/engine_control.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/stm32h7xx_hal_msp.cyclo ./Core/Src/stm32h7xx_hal_msp.d ./Core/Src/stm32h7xx_hal_msp.o ./Core/Src/stm32h7xx_hal_msp.su ./Core/Src/stm32h7xx_it.cyclo ./Core/Src/stm32h7xx_it.d ./Core/Src/stm32h7xx_it.o ./Core/Src/stm32h7xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32h7xx.cyclo ./Core/Src/system_stm32h7xx.d ./Core/Src/system_stm32h7xx.o ./Core/Src/system_stm32h7xx.su
+	-$(RM) ./Core/Src/ADC_driver.cyclo ./Core/Src/ADC_driver.d ./Core/Src/ADC_driver.o ./Core/Src/ADC_driver.su ./Core/Src/Battery_manager.cyclo ./Core/Src/Battery_manager.d ./Core/Src/Battery_manager.o ./Core/Src/Battery_manager.su ./Core/Src/MAP_sensor.cyclo ./Core/Src/MAP_sensor.d ./Core/Src/MAP_sensor.o ./Core/Src/MAP_sensor.su ./Core/Src/MAX9924_driver.cyclo ./Core/Src/MAX9924_driver.d ./Core/Src/MAX9924_driver.o ./Core/Src/MAX9924_driver.su ./Core/Src/cJSON.cyclo ./Core/Src/cJSON.d ./Core/Src/cJSON.o ./Core/Src/cJSON.su ./Core/Src/communication_serial_protocol.cyclo ./Core/Src/communication_serial_protocol.d ./Core/Src/communication_serial_protocol.o ./Core/Src/communication_serial_protocol.su ./Core/Src/engine_control.cyclo ./Core/Src/engine_control.d ./Core/Src/engine_control.o ./Core/Src/engine_control.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/stm32h7xx_hal_msp.cyclo ./Core/Src/stm32h7xx_hal_msp.d ./Core/Src/stm32h7xx_hal_msp.o ./Core/Src/stm32h7xx_hal_msp.su ./Core/Src/stm32h7xx_it.cyclo ./Core/Src/stm32h7xx_it.d ./Core/Src/stm32h7xx_it.o ./Core/Src/stm32h7xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32h7xx.cyclo ./Core/Src/system_stm32h7xx.d ./Core/Src/system_stm32h7xx.o ./Core/Src/system_stm32h7xx.su
 
 .PHONY: clean-Core-2f-Src
 
