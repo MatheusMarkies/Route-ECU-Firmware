@@ -15,7 +15,7 @@
 ../Core/Src/main.c:614:6:ADC_Read_Cycle	3
 ../Core/Src/main.c:626:6:ENGINE_INJECTOR_SCHEDULE_TEST_TOGGLE	1
 ../Core/Src/main.c:630:6:ENGINE_IGNITION_SCHEDULE_TEST_TOGGLE	1
-../Core/Src/main.c:640:5:main	17
+../Core/Src/main.c:640:5:main	6
 ../Core/Src/main.c:830:6:SystemClock_Config	4
 ../Core/Src/main.c:906:6:PeriphCommonClock_Config	2
 ../Core/Src/main.c:936:13:MX_ADC1_Init	4

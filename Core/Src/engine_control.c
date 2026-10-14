@@ -30,15 +30,13 @@ const uint32_t injector[4] = {
 TIM_CHANNEL_1,
 TIM_CHANNEL_2,
 TIM_CHANNEL_3,
-TIM_CHANNEL_4
-};
+TIM_CHANNEL_4 };
 
 const uint32_t ignition[4] = {
 TIM_CHANNEL_1,
 TIM_CHANNEL_2,
 TIM_CHANNEL_3,
-TIM_CHANNEL_4
-};
+TIM_CHANNEL_4 };
 
 const uint32_t injector_active_channel[4] = { HAL_TIM_ACTIVE_CHANNEL_1,
 		HAL_TIM_ACTIVE_CHANNEL_2, HAL_TIM_ACTIVE_CHANNEL_3,
@@ -57,32 +55,33 @@ ENGINE_t engine = { 0 };
 Clycle_Telemetry_t telemetry = { 0 };
 TimerSnapshot_t timer_snapshot = { 0 };
 
-static const float FIRING_OFFSET[4] = {
-		0.0f,   // Cyl 1 (0 graus)
+static const float FIRING_OFFSET[4] = { 0.0f,   // Cyl 1 (0 graus)
 		540.0f, // Cyl 2 (540 graus)
 		180.0f, // Cyl 3 (180 graus)
 		360.0f  // Cyl 4 (360 graus)
-};
+		};
 
 uint32_t MIN_GUARD_TIME_US = 50;       // Tempo mínimo para agendar OC
-uint32_t MAX_SCHEDULE_TIME_US = 5000;    // 5ms — clamp para evitar overflow em baixas RPM
+uint32_t MAX_SCHEDULE_TIME_US = 5000; // 5ms — clamp para evitar overflow em baixas RPM
 
 static int firing_cylinder = 0;
 static int injection_cylinder = 0;
 
 static inline float wrap(float angle, float max) {
-    while (angle >= max) angle -= max;
-    while (angle < 0.0f) angle += max;
-    return angle;
+	while (angle >= max)
+		angle -= max;
+	while (angle < 0.0f)
+		angle += max;
+	return angle;
 }
 
 static inline float clampf(float val, float min, float max) {
-    if (val < min) {
-        return min;
-    } else if (val > max) {
-        return max;
-    }
-    return val;
+	if (val < min) {
+		return min;
+	} else if (val > max) {
+		return max;
+	}
+	return val;
 }
 
 static void ENGINE_CaptureTimers(void) {
@@ -115,23 +114,26 @@ static uint32_t ENGINE_CalculateDeltaT(uint32_t current, uint32_t previous) {
 	}
 }
 
-static inline uint32_t ENGINE_Tim5TickAfter(uint32_t now_tim5, uint32_t delay_us) {
+static inline uint32_t ENGINE_Tim5TickAfter(uint32_t now_tim5,
+		uint32_t delay_us) {
 	return (now_tim5 + delay_us) & 0xFFFFFFFF;  // TIM5 = 32 bits
 }
 
-static inline uint32_t ENGINE_Tim4TickAfter(uint32_t now_tim4, uint32_t delay_us) {
-    return (now_tim4 + delay_us) & 0xFFFF;  // TIM4 = 16 bits
+static inline uint32_t ENGINE_Tim4TickAfter(uint32_t now_tim4,
+		uint32_t delay_us) {
+	return (now_tim4 + delay_us) & 0xFFFF;  // TIM4 = 16 bits
 }
 
-static inline uint32_t ENGINE_Tim1TickAfter(uint32_t now_tim1, uint32_t delay_us) {
-    return (now_tim1 + delay_us) & 0xFFFF;  // TIM1 = 16 bits
+static inline uint32_t ENGINE_Tim1TickAfter(uint32_t now_tim1,
+		uint32_t delay_us) {
+	return (now_tim1 + delay_us) & 0xFFFF;  // TIM1 = 16 bits
 }
 
 static float ENGINE_DeltaAngle(float from, float to) {
-    float delta = to - from;
-    if (delta < 0.0f)
-        delta += ANGLE_CYCLE;
-    return delta;
+	float delta = to - from;
+	if (delta < 0.0f)
+		delta += ANGLE_CYCLE;
+	return delta;
 }
 
 static float ENGINE_CalculateAngularVelocity(VR_Sensor_t sensor) {
@@ -152,7 +154,8 @@ static float ENGINE_CalculateAngularAcceleration(VR_Sensor_t sensor) {
 	if (!sensor.isSync)
 		return 0.0f;
 
-	if (sensor.frequency_hz <= 0.0f || sensor.period == 0 || sensor.last_period == 0)
+	if (sensor.frequency_hz <= 0.0f || sensor.period == 0
+			|| sensor.last_period == 0)
 		return 0.0f;
 
 	float delta_theta = 360.0f / sensor.tooths;
@@ -167,7 +170,6 @@ static float ENGINE_CalculateAngularAcceleration(VR_Sensor_t sensor) {
 	return angular_acc; //Graus/seg^2
 }
 
-
 static float ENGINE_CalculateFixedAngle(VR_Sensor_t sensor) {
 	if (!sensor.isSync)
 		return 0.0f;
@@ -178,7 +180,7 @@ static float ENGINE_CalculateFixedAngle(VR_Sensor_t sensor) {
 	float degrees_per_tooth = 360.0f / (float) sensor.tooths;
 	float fixed_angle = degrees_per_tooth * (float) sensor.pulse_count;
 
-	if(!sensor.is_first_rev)
+	if (!sensor.is_first_rev)
 		fixed_angle += 360.0f;
 
 	return wrap(fixed_angle, ANGLE_CYCLE);
@@ -191,14 +193,15 @@ static float ENGINE_CalculateAngle(VR_Sensor_t sensor) {
 	if (sensor.frequency_hz <= 0.0f || sensor.period == 0 || sensor.tooths == 0)
 		return 0.0f;
 
-	float degrees_per_tooth = 360.0f / (float)sensor.tooths;
+	float degrees_per_tooth = 360.0f / (float) sensor.tooths;
 
 	float base_angle = degrees_per_tooth * (float) sensor.pulse_count;
 
-	if(!sensor.is_first_rev)
+	if (!sensor.is_first_rev)
 		base_angle += 360.0f;
 
-	float dt = (float) ENGINE_CalculateDeltaT(timer_snapshot.tim5, sensor.current_edge_time) / 1e6f; // us
+	float dt = (float) ENGINE_CalculateDeltaT(timer_snapshot.tim5,
+			sensor.current_edge_time) / 1e6f; // us
 
 	float frac = dt / (float) sensor.period;
 
@@ -207,14 +210,15 @@ static float ENGINE_CalculateAngle(VR_Sensor_t sensor) {
 	return wrap(angle, ANGLE_CYCLE);
 }
 
-float ENGINE_GetNextPhaseAngle(void){
+float ENGINE_GetNextPhaseAngle(void) {
 	float best = 0.0f;
 	float lowerDelta = ANGLE_CYCLE;
 
-	for(int i = 0;i < 4; i++){
-		float nextDelta = ENGINE_DeltaAngle(engine.crankshaft_angle, FIRING_OFFSET[i]);
+	for (int i = 0; i < 4; i++) {
+		float nextDelta = ENGINE_DeltaAngle(engine.crankshaft_angle,
+				FIRING_OFFSET[i]);
 
-		if(nextDelta < lowerDelta){
+		if (nextDelta < lowerDelta) {
 			lowerDelta = nextDelta;
 			best = FIRING_OFFSET[i];
 		}
@@ -241,76 +245,90 @@ void ENGINE_UpdateCylinderPhases(float global_angle) {
 	}
 }
 
-void ENGINE_PhaseOCCallback(void){
+void ENGINE_PhaseOCCallback(void) {
 	ENGINE_CaptureTimers();
 
 	engine.crankshaft_angle = ENGINE_CalculateAngle(ckp_sensor);
-	engine.crankshaft_angular_velocity = ENGINE_CalculateAngularVelocity(ckp_sensor);
-	engine.crankshaft_angular_acc = ENGINE_CalculateAngularAcceleration(ckp_sensor);
+	engine.crankshaft_angular_velocity = ENGINE_CalculateAngularVelocity(
+			ckp_sensor);
+	engine.crankshaft_angular_acc = ENGINE_CalculateAngularAcceleration(
+			ckp_sensor);
 
-	if(engine.crankshaft_angle < (0.0f + 360.0f/(float)ckp_sensor.tooths)){
+	if (engine.crankshaft_angle < (0.0f + 360.0f / (float) ckp_sensor.tooths)) {
 
 	}
 
-	if(engine.crankshaft_angle > (720.0f - 360.0f/(float)ckp_sensor.tooths)){
+	if (engine.crankshaft_angle
+			> (720.0f - 360.0f / (float) ckp_sensor.tooths)) {
 		MAP_OnCycleComplete();
-	}
+	}\
 
 	ENGINE_UpdateCylinderPhases(engine.crankshaft_angle);
 }
 
 float missing_teeth_gap = 4.0f;
-void ENGINE_ScheduleControl(VR_Sensor_t ckp_sensor){
+void ENGINE_ScheduleControl(VR_Sensor_t ckp_sensor) {
 	ENGINE_CaptureTimers();
 
 	engine.crankshaft_angle = ENGINE_CalculateAngle(ckp_sensor);
-	engine.crankshaft_angular_velocity = ENGINE_CalculateAngularVelocity(ckp_sensor);
-	engine.crankshaft_angular_acc = ENGINE_CalculateAngularAcceleration(ckp_sensor);
+	engine.crankshaft_angular_velocity = ENGINE_CalculateAngularVelocity(
+			ckp_sensor);
+	engine.crankshaft_angular_acc = ENGINE_CalculateAngularAcceleration(
+			ckp_sensor);
 
 	float next_phase_angle = ENGINE_GetNextPhaseAngle();
 	engine.camshaft_angle = next_phase_angle;
 
-	float delta_to_phase_angle = ENGINE_DeltaAngle(engine.crankshaft_angle, next_phase_angle);
+	float delta_to_phase_angle = ENGINE_DeltaAngle(engine.crankshaft_angle,
+			next_phase_angle);
 
-	float time_to_next_phase_s = delta_to_phase_angle / engine.crankshaft_angular_velocity;
-	uint32_t time_to_next_phase_us = (uint32_t)(time_to_next_phase_s * 1e6);
+	float time_to_next_phase_s = delta_to_phase_angle
+			/ engine.crankshaft_angular_velocity;
+	uint32_t time_to_next_phase_us = (uint32_t) (time_to_next_phase_s * 1e6);
 
-	if (time_to_next_phase_us < MIN_GUARD_TIME_US)
-		return;
+	//if (time_to_next_phase_us < MIN_GUARD_TIME_US)
+	//	return;
 
-	time_to_next_phase_us = clampf(time_to_next_phase_us, MIN_GUARD_TIME_US, MAX_SCHEDULE_TIME_US);
-	uint32_t match = ENGINE_Tim5TickAfter(timer_snapshot.tim5, time_to_next_phase_us);
+	time_to_next_phase_us = clampf(time_to_next_phase_us, MIN_GUARD_TIME_US,
+			MAX_SCHEDULE_TIME_US);
+	uint32_t match = ENGINE_Tim5TickAfter(timer_snapshot.tim5,
+			time_to_next_phase_us);
 
-	for(int i = 0; i<4;i++){
-		if(FIRING_OFFSET[i] == next_phase_angle){
+	for (int i = 0; i < 4; i++) {
+		if (FIRING_OFFSET[i] == next_phase_angle) {
 			firing_cylinder = i;
-			break;
 		}
-	}
-
-	for(int i = 0; i<4;i++){
-		if(wrap(FIRING_OFFSET[i] + 360.0f, ANGLE_CYCLE) == next_phase_angle){
+		if (wrap(FIRING_OFFSET[i] + 360.0f, ANGLE_CYCLE) == next_phase_angle) {
 			injection_cylinder = i;
-			break;
 		}
 	}
 
 	uint32_t dwell_us = 2000;
-	float dwell_angle = engine.crankshaft_angular_velocity * ((float)dwell_us * 1e-6);
+	float dwell_angle = engine.crankshaft_angular_velocity
+			* ((float) dwell_us * 1e-6);
 
-	float delta_to_dwell_angle = ENGINE_DeltaAngle(dwell_angle, next_phase_angle);
+	float delta_to_dwell_angle = ENGINE_DeltaAngle(dwell_angle,
+			next_phase_angle);
 
-	float time_to_dwell_s = delta_to_dwell_angle / engine.crankshaft_angular_velocity;
-	uint32_t time_to_dwell_us = (uint32_t)(time_to_dwell_s * 1e6);
+	float time_to_dwell_s = delta_to_dwell_angle
+			/ engine.crankshaft_angular_velocity;
+	uint32_t time_to_dwell_us = (uint32_t) (time_to_dwell_s * 1e6);
 
-	float tooths_to_dwell = (float)dwell_us / ckp_sensor.period;
-	tooths_to_dwell = clampf(tooths_to_dwell, missing_teeth_gap, (float)ckp_sensor.tooths);
-	if(delta_to_phase_angle < (360.0f/(float)ckp_sensor.tooths * tooths_to_dwell + 1.0f)){
-		ENGINE_Schedule_Dwell(firing_cylinder, time_to_dwell_us, dwell_us);
+	float tooths_to_dwell = (float) dwell_us / ckp_sensor.period;
+	tooths_to_dwell = clampf(tooths_to_dwell, missing_teeth_gap,
+			(float) ckp_sensor.tooths);
+	if (delta_to_phase_angle
+			< (360.0f / (float) ckp_sensor.tooths * tooths_to_dwell + 1.0f)) {
+		if(ignition_state[firing_cylinder].state == IGN_STATE_IDLE) {
+		            ENGINE_Schedule_Dwell(firing_cylinder, time_to_dwell_us, dwell_us);
+		        }
 	}
 
-	if(delta_to_phase_angle < (360.0f/(float)ckp_sensor.tooths * missing_teeth_gap + 1.0f)){
-	    ENGINE_Schedule_Injection(injection_cylinder, time_to_next_phase_us, 20000);
+	if (delta_to_phase_angle
+			< (360.0f / (float) ckp_sensor.tooths * missing_teeth_gap + 1.0f)) {
+		if (injector_state[injection_cylinder].state == INJ_STATE_IDLE)
+			ENGINE_Schedule_Injection(injection_cylinder, time_to_next_phase_us,
+					2000);
 	}
 
 	__HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_4, match);
@@ -323,17 +341,19 @@ void ENGINE_CKP_Callback(VR_Sensor_t ckp_sensor) {
 	if (!ckp_sensor.isSync)
 		return;
 
-	if (ckp_sensor.frequency_hz <= 0.0f || ckp_sensor.period == 0 || ckp_sensor.tooths == 0)
+	if (ckp_sensor.frequency_hz <= 0.0f || ckp_sensor.period == 0
+			|| ckp_sensor.tooths == 0)
 		return;
 
-    if(!first_is_sync)
-    	ENGINE_PhaseOCCallback();
+	if (!first_is_sync)
+		ENGINE_PhaseOCCallback();
 
-    first_is_sync = 1;
-    ENGINE_ScheduleControl(ckp_sensor);
+	first_is_sync = 1;
+	ENGINE_ScheduleControl(ckp_sensor);
 }
 
-void ENGINE_Schedule_Injection(uint8_t cyl_id, uint16_t delta_to_start, uint16_t pulse_us) {
+void ENGINE_Schedule_Injection(uint8_t cyl_id, uint16_t delta_to_start,
+		uint16_t pulse_us) {
 	ENGINE_CaptureTimers();
 
 	uint32_t channel = injector[cyl_id];
@@ -355,17 +375,17 @@ void ENGINE_Schedule_Injection(uint8_t cyl_id, uint16_t delta_to_start, uint16_t
 void ENGINE_Injector_FireNow(uint8_t inj, uint16_t pulse_us) {
 	ENGINE_CaptureTimers();
 
-    uint32_t channel = injector[inj];
+	uint32_t channel = injector[inj];
 
-    injector_state[inj].pulse_width_us = pulse_us;
-    injector_state[inj].pulse_start_time = timer_snapshot.tim1;
-    injector_state[inj].state = INJ_STATE_ACTIVE;
+	injector_state[inj].pulse_width_us = pulse_us;
+	injector_state[inj].pulse_start_time = timer_snapshot.tim1;
+	injector_state[inj].state = INJ_STATE_ACTIVE;
 
-    __HAL_TIM_SET_OC_MODE(&htim1, channel, TIM_OCMODE_FORCED_ACTIVE);
+	__HAL_TIM_SET_OC_MODE(&htim1, channel, TIM_OCMODE_FORCED_ACTIVE);
 
-    uint16_t match = ENGINE_Tim1TickAfter(timer_snapshot.tim1, pulse_us);
+	uint16_t match = ENGINE_Tim1TickAfter(timer_snapshot.tim1, pulse_us);
 
-    injector_state[inj].state = INJ_STATE_ACTIVE;
+	injector_state[inj].state = INJ_STATE_ACTIVE;
 
 	__HAL_TIM_SET_OC_MODE(&htim1, channel, TIM_OCMODE_INACTIVE);
 	__HAL_TIM_SET_COMPARE(&htim1, channel, match);
@@ -418,7 +438,7 @@ void ENGINE_Injector_ScheduleTestLoop(void) {
 	printf("[INJ TEST] Scheduling sequence initiated...\r\n");
 
 	for (int i = 0; i < 4; i++) {
-		ENGINE_Schedule_Injection(i, target_start_tick, (uint16_t)50000);
+		ENGINE_Schedule_Injection(i, target_start_tick, (uint16_t) 50000);
 	}
 }
 
@@ -431,9 +451,9 @@ void ENGINE_Injector_StopAll(void) {
 }
 
 void ENGINE_Injector_OutputCompareCallback(TIM_HandleTypeDef *htim) {
-    for (int i = 0; i < 4; i++) {
-        if (htim->Channel != injector_active_channel[i])
-            continue;
+	for (int i = 0; i < 4; i++) {
+		if (htim->Channel != injector_active_channel[i])
+			continue;
 
 		uint32_t channel = injector[i];
 		switch (injector_state[i].state) {
@@ -443,7 +463,8 @@ void ENGINE_Injector_OutputCompareCallback(TIM_HandleTypeDef *htim) {
 
 			injector_state[i].state = INJ_STATE_ACTIVE;
 
-			uint16_t match = ENGINE_Tim1TickAfter(timer_snapshot.tim1, injector_state[i].pulse_width_us);
+			uint16_t match = ENGINE_Tim1TickAfter(timer_snapshot.tim1,
+					injector_state[i].pulse_width_us);
 
 			__HAL_TIM_SET_OC_MODE(&htim1, channel, TIM_OCMODE_INACTIVE);
 			__HAL_TIM_SET_COMPARE(&htim1, channel, match);
@@ -462,15 +483,17 @@ void ENGINE_Injector_OutputCompareCallback(TIM_HandleTypeDef *htim) {
 			injector_state[i].state = INJ_STATE_IDLE;
 			break;
 		}
-    }
+	}
 }
 
-void ENGINE_Schedule_Dwell(uint8_t cyl_id, uint32_t delta_to_start, uint32_t dwell_us) {
+void ENGINE_Schedule_Dwell(uint8_t cyl_id, uint32_t delta_to_start,
+		uint32_t dwell_us) {
 	ENGINE_CaptureTimers();
 
 	uint32_t channel = ignition[cyl_id];
 
-	uint16_t start_tick = ENGINE_Tim4TickAfter(timer_snapshot.tim4, delta_to_start);
+	uint16_t start_tick = ENGINE_Tim4TickAfter(timer_snapshot.tim4,
+			delta_to_start);
 
 	ignition_state[cyl_id].dwell_us = dwell_us;
 	ignition_state[cyl_id].dwell_start_time = start_tick;
@@ -484,12 +507,14 @@ void ENGINE_Schedule_Dwell(uint8_t cyl_id, uint32_t delta_to_start, uint32_t dwe
 	__HAL_TIM_ENABLE_IT(&htim4, IT_FLAGS[cyl_id]);
 }
 
-void ENGINE_Schedule_Spark(uint8_t cyl_id, uint32_t delta_to_start, uint16_t spark_time_us) {
+void ENGINE_Schedule_Spark(uint8_t cyl_id, uint32_t delta_to_start,
+		uint16_t spark_time_us) {
 	ENGINE_CaptureTimers();
 
 	uint32_t channel = ignition[cyl_id];
 
-	uint16_t start_tick = ENGINE_Tim4TickAfter(timer_snapshot.tim4, delta_to_start);
+	uint16_t start_tick = ENGINE_Tim4TickAfter(timer_snapshot.tim4,
+			delta_to_start);
 
 	ignition_state[cyl_id].spark_time_us = spark_time_us;
 	ignition_state[cyl_id].spark_start_time = start_tick;
@@ -501,7 +526,8 @@ void ENGINE_Schedule_Spark(uint8_t cyl_id, uint32_t delta_to_start, uint16_t spa
 	__HAL_TIM_ENABLE_IT(&htim4, IT_FLAGS[cyl_id]);
 }
 
-void ENGINE_Ignition_FireNow(uint8_t ign, uint16_t dwell_us, uint16_t spark_time_us) {
+void ENGINE_Ignition_FireNow(uint8_t ign, uint16_t dwell_us,
+		uint16_t spark_time_us) {
 	ENGINE_CaptureTimers();
 
 	uint32_t channel = ignition[ign];
@@ -514,7 +540,8 @@ void ENGINE_Ignition_FireNow(uint8_t ign, uint16_t dwell_us, uint16_t spark_time
 
 	__HAL_TIM_SET_OC_MODE(&htim4, channel, TIM_OCMODE_FORCED_ACTIVE);
 
-	uint16_t turn_off_dwell = ENGINE_Tim4TickAfter(ignition_state[ign].spark_start_time, ignition_state[ign].dwell_us);
+	uint16_t turn_off_dwell = ENGINE_Tim4TickAfter(
+			ignition_state[ign].spark_start_time, ignition_state[ign].dwell_us);
 
 	__HAL_TIM_SET_OC_MODE(&htim4, channel, TIM_OCMODE_INACTIVE);
 	__HAL_TIM_SET_COMPARE(&htim4, channel, turn_off_dwell);
@@ -577,37 +604,38 @@ void ENGINE_Ignition_StopAll(void) {
 }
 
 void ENGINE_Ignition_OutputCompareCallback(TIM_HandleTypeDef *htim) {
-    for (int i = 0; i < 4; i++) {
-        if (htim->Channel != ignition_active_channel[i])
-            continue;
+	for (int i = 0; i < 4; i++) {
+		if (htim->Channel != ignition_active_channel[i])
+			continue;
 
-        uint32_t channel = ignition[i];
+		uint32_t channel = ignition[i];
 
-        switch (ignition_state[i].state) {
-        case IGN_STATE_PENDING: {
+		switch (ignition_state[i].state) {
+		case IGN_STATE_PENDING: {
 
-            break;
-        }
-        case IGN_STATE_DWELL:
-        	ENGINE_CaptureTimers();
+			break;
+		}
+		case IGN_STATE_DWELL:
+			ENGINE_CaptureTimers();
 
-        	uint32_t spark_time = ENGINE_Tim4TickAfter(timer_snapshot.tim4, ignition_state[i].dwell_us);
+			uint32_t spark_time = ENGINE_Tim4TickAfter(timer_snapshot.tim4,
+					ignition_state[i].dwell_us);
 
-        	__HAL_TIM_SET_OC_MODE(htim, channel, TIM_OCMODE_INACTIVE);
-        	__HAL_TIM_SET_COMPARE(htim, channel, spark_time);
+			__HAL_TIM_SET_OC_MODE(htim, channel, TIM_OCMODE_INACTIVE);
+			__HAL_TIM_SET_COMPARE(htim, channel, spark_time);
 
-        	ignition_state[i].state = IGN_STATE_FIRED;
-            break;
-        case IGN_STATE_FIRED:
-        	__HAL_TIM_DISABLE_IT(htim, IT_FLAGS[i]);
-        	ignition_state[i].state = IGN_STATE_IDLE;
-        	__HAL_TIM_SET_OC_MODE(htim, channel, TIM_OCMODE_FORCED_INACTIVE);
-            break;
-        default:
-        	__HAL_TIM_DISABLE_IT(htim, IT_FLAGS[i]);
-            break;
-        }
+			ignition_state[i].state = IGN_STATE_FIRED;
+			break;
+		case IGN_STATE_FIRED:
+			__HAL_TIM_DISABLE_IT(htim, IT_FLAGS[i]);
+			ignition_state[i].state = IGN_STATE_IDLE;
+			__HAL_TIM_SET_OC_MODE(htim, channel, TIM_OCMODE_FORCED_INACTIVE);
+			break;
+		default:
+			__HAL_TIM_DISABLE_IT(htim, IT_FLAGS[i]);
+			break;
+		}
 
-        return;
-    }
+		return;
+	}
 }

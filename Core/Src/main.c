@@ -735,7 +735,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
-		static uint32_t last_ADC_read = 0;
+		/*static uint32_t last_ADC_read = 0;
 		if (HAL_GetTick() - last_ADC_read >= 5) {
 			last_ADC_read = HAL_GetTick();
 			ADC_Read_Cycle();
@@ -807,14 +807,14 @@ int main(void)
 					    telemetry_step = 0;
 					    break;
 					}
-				}
+				}*/
 			/*} else {
 #ifdef DEBUG_PROTOCOL
 				printf("Try Connect to Workbench... \r\n");
 #endif
 				SERIAL_SendCommand("AT", "OK", 300, SERIAL_CheckConnection);
 			}*/
-		}
+		//}
 
     /* USER CODE END WHILE */
 
@@ -1667,10 +1667,10 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 10, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 10, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
 
 }

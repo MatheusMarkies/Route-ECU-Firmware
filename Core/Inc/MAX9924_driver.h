@@ -16,7 +16,7 @@
 
 #define LARGEST_RATIO 2
 
-#define DEBUG_CKP 0
+#define DEBUG_CKP 1
 
 // Tipo de sensor VR
 typedef enum {

@@ -89,9 +89,8 @@ void VR_InputCaptureCallback(VR_Sensor_Type_t type) {
 		temp.pulse_count += 1;
 		temp.elapsed_time += (float)delta / 1e6f;
 
-		float revolution_freq = (temp.pulse_count / (temp.elapsed_time * temp.pulse_count_per_rev));
-
-		temp.frequency_hz = (revolution_freq * temp.pulse_count_per_rev);
+		float revolution_freq = (temp.pulse_count / (temp.elapsed_time * temp.tooths));
+		temp.frequency_hz = (revolution_freq * temp.tooths);
 
 		temp.last_period = temp.period;
 
